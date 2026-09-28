@@ -12,6 +12,7 @@ dependencies = [
     "dbt-duckdb>=1.11.0",
     "duckdb>=1.5.5",
     "numpy>=2.5.3",
+    "pyyaml>=6.0.3",
     "scipy>=1.18.1",
     "streamlit>=1.64.0",
 ]
