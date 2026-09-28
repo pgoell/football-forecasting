@@ -13,13 +13,24 @@ WC 2026 and EURO 2028 have no `groups` in the format data (the draw is unknown o
 Rules against fooling ourselves; HOLDOUT RULE).
 """
 
+import itertools
 import random
 
 import duckdb
 import pytest
 
 from football_forecasting.data import WAREHOUSE
-from football_forecasting.tournament import GroupMatch, bracket_slots, load_formats, standings, walk
+from football_forecasting.tournament import (
+    GroupMatch,
+    bracket_slots,
+    home_of,
+    load_formats,
+    round_sequence,
+    standings,
+    walk,
+)
+from football_forecasting.tournament import _group_venues as group_venues
+from football_forecasting.tournament import _knockout_venues as knockout_venues
 
 # Real group standings decided by FIFA/UEFA's fair-play (disciplinary) tie-break, which we
 # have no data for (no yellow/red cards in martj42/international_results), the two cases
@@ -105,21 +116,27 @@ def real_decider(con: duckdb.DuckDBPyConnection, finals: str, edition: int):
     return decide
 
 
-@pytest.mark.parametrize(
-    ("format_id", "finals", "edition"),
-    [
-        ("wc2006", "WC", 2006),
-        ("wc2010", "WC", 2010),
-        ("wc2014", "WC", 2014),
-        ("wc2018", "WC", 2018),
-        ("wc2022", "WC", 2022),
-        ("euro2008", "EURO", 2008),
-        ("euro2012", "EURO", 2012),
-        ("euro2016", "EURO", 2016),
-        ("euro2020", "EURO", 2020),
-        ("euro2024", "EURO", 2024),
-    ],
-)
+EDITIONS = [
+    ("wc2006", "WC", 2006),
+    ("wc2010", "WC", 2010),
+    ("wc2014", "WC", 2014),
+    ("wc2018", "WC", 2018),
+    ("wc2022", "WC", 2022),
+    ("euro2008", "EURO", 2008),
+    ("euro2012", "EURO", 2012),
+    ("euro2016", "EURO", 2016),
+    ("euro2020", "EURO", 2020),
+    ("euro2024", "EURO", 2024),
+]
+
+# martj42's one known error in `neutral` through 2024-07-14 (docs/data-sources.md, Tournament
+# formats): Wales v Switzerland, EURO 2020, 2021-06-12, was at Baku (neutral for both), but
+# martj42 has it non-neutral with Wales home (its `city`/`country` columns agree with neither
+# the real venue, Cardiff instead). Everything else in this set agrees exactly with `home_of`.
+NEUTRAL_FLAG_EXCEPTIONS = {("EURO", 2020, frozenset(("wales", "switzerland")))}
+
+
+@pytest.mark.parametrize(("format_id", "finals", "edition"), EDITIONS)
 def test_replay_reproduces_the_real_bracket_and_champion(format_id, finals, edition):
     fmt = load_formats()[format_id]
     assert fmt.groups is not None
@@ -148,3 +165,82 @@ def test_wc2026_and_euro2028_have_no_group_draw():
     formats = load_formats()
     assert formats["wc2026"].groups is None
     assert formats["euro2028"].groups is None
+
+
+def real_home_and_neutral(
+    con: duckdb.DuckDBPyConnection, finals: str, edition: int
+) -> dict[frozenset, tuple[str, bool]]:
+    """Every real match of one tournament: the two teams (as a frozenset) to
+    (its home_team_id, its `neutral` flag) from martj42."""
+    rows = con.execute(
+        "select home_team_id, away_team_id, neutral from int_international_matches"
+        " where finals = ? and edition = ?",
+        [finals, edition],
+    ).fetchall()
+    return {frozenset((h, a)): (h, n) for h, a, n in rows}
+
+
+def test_home_of_agrees_with_martj42_neutral_flag():
+    """docs/tournament-spec.md: home only when a team plays in its own country. Checks
+    `home_of`, fed the venue data in tournament_formats.yaml (or, where none is known, its
+    fallback: a host of the whole tournament) against every real WC/EURO finals match in this
+    module's ten tournaments (through 2024-07-14), group and knockout stage alike."""
+    formats = load_formats()
+    con = duckdb.connect(str(WAREHOUSE), read_only=True)
+    mismatches = []
+    try:
+        for format_id, finals, edition in EDITIONS:
+            fmt = formats[format_id]
+            assert fmt.groups is not None
+            group_matches = {
+                letter: real_group_matches(con, finals, edition, teams)
+                for letter, teams in fmt.groups.items()
+            }
+            overrides = GROUP_OVERRIDES.get(format_id, {})
+            rng = random.Random(0)
+            order = {
+                letter: standings(
+                    teams, group_matches[letter], fmt.tiebreak, rng, override=overrides.get(letter)
+                )
+                for letter, teams in fmt.groups.items()
+            }
+            slots = bracket_slots(fmt, order, group_matches, rng)
+            real = real_home_and_neutral(con, finals, edition)
+
+            def check(
+                a: str,
+                b: str,
+                venue: str | None,
+                format_id: str = format_id,
+                finals: str = finals,
+                edition: int = edition,
+                fmt=fmt,
+                real=real,
+            ) -> None:
+                predicted = home_of(a, b, fmt.hosts, venue)
+                real_home, real_neutral = real[frozenset((a, b))]
+                ok = (predicted is None) == real_neutral and (
+                    real_neutral or predicted == real_home
+                )
+                if not ok and (finals, edition, frozenset((a, b))) not in NEUTRAL_FLAG_EXCEPTIONS:
+                    mismatches.append((format_id, a, b, real_home, real_neutral, predicted))
+
+            for letter, teams in fmt.groups.items():
+                venues = group_venues(fmt, letter, teams)
+                for i, (a, b) in enumerate(itertools.combinations(teams, 2)):
+                    check(a, b, venues[i] if venues is not None else None)
+
+            seeds = fmt.knockout_seeds
+            current = [(slots[x], slots[y]) for x, y in seeds]
+            decide = real_decider(con, finals, edition)
+            venues = knockout_venues(fmt)
+            venue_iter = iter(venues) if venues is not None else None
+            for _ in round_sequence(len(seeds)):
+                winners = []
+                for a, b in current:
+                    check(a, b, next(venue_iter) if venue_iter is not None else None)
+                    winners.append(decide(a, b))
+                current = list(zip(winners[0::2], winners[1::2], strict=False))
+    finally:
+        con.close()
+    assert not mismatches, mismatches

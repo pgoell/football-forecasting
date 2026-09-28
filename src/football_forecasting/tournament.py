@@ -58,6 +58,18 @@ class Format:
     third_place_table: dict[tuple[str, ...], dict[str, int]] | None
     knockout_seeds: tuple[tuple[str, str], ...]  # first knockout round, in bracket order
     tiebreak: str  # "wc" or "euro"
+    # Venue country per match slot (docs/tournament-spec.md, Simulator; docs/data-sources.md,
+    # Tournament formats): `venue` when every match of the tournament is in one country (a
+    # single host); else `group_venues`/`knockout_venues` when known match by match (EURO
+    # 2020's 11 host countries). All None when the venues are not known (EURO 2028): `home_of`
+    # then falls back to `hosts`.
+    venue: str | None = None
+    group_venues: dict[str, tuple[str, ...]] | None = (
+        None  # letter -> one per combinations(group, 2)
+    )
+    knockout_venues: dict[str, tuple[str, ...]] | None = (
+        None  # round name -> one per match, bracket order
+    )
 
 
 def load_formats(path: Path = FORMATS_FILE) -> dict[str, Format]:
@@ -78,6 +90,7 @@ def load_formats(path: Path = FORMATS_FILE) -> dict[str, Format]:
             else None
         )
         seeds = edition.get("knockout_seeds", shape["knockout_seeds"])
+        venues = edition.get("venues")
         formats[edition["id"]] = Format(
             id=edition["id"],
             kind=edition["kind"],
@@ -89,12 +102,26 @@ def load_formats(path: Path = FORMATS_FILE) -> dict[str, Format]:
             third_place_table=table,
             knockout_seeds=tuple(tuple(pair) for pair in seeds),
             tiebreak=shape["tiebreak"],
+            venue=edition.get("venue"),
+            group_venues={letter: tuple(v) for letter, v in venues["groups"].items()}
+            if venues
+            else None,
+            knockout_venues={name: tuple(v) for name, v in venues["knockout"].items()}
+            if venues
+            else None,
         )
     return formats
 
 
-def home_of(team_a: str, team_b: str, hosts: Collection[str]) -> str | None:
-    """The host of the two, if exactly one is a host of this tournament."""
+def home_of(
+    team_a: str, team_b: str, hosts: Collection[str], venue: str | None = None
+) -> str | None:
+    """The home team: whichever of the two plays in its own country, by the match's real
+    venue (`venue`, docs/tournament-spec.md: a team, host or not, is only ever home in its
+    own country). Falls back to the old rule, exactly one of the two a tournament host, only
+    when the venue is not known (`venue` is None: EURO 2028, docs/data-sources.md)."""
+    if venue is not None:
+        return team_a if venue == team_a else team_b if venue == team_b else None
     a_host, b_host = team_a in hosts, team_b in hosts
     return team_a if a_host and not b_host else team_b if b_host and not a_host else None
 
@@ -290,10 +317,14 @@ def simulate_group(
     match_probs: MatchProbs,
     score_pool: ScorePool,
     rng: random.Random,
+    venues: Sequence[str | None] | None = None,
 ) -> list[GroupMatch]:
+    """`venues`: one venue country per pair of `teams`, in `itertools.combinations` order
+    (`Format.group_venues[letter]`), or None if not known."""
     matches = []
-    for a, b in itertools.combinations(teams, 2):
-        probs = match_probs(a, b, home_of(a, b, hosts))
+    for i, (a, b) in enumerate(itertools.combinations(teams, 2)):
+        venue = venues[i] if venues is not None else None
+        probs = match_probs(a, b, home_of(a, b, hosts, venue))
         outcome = _draw_outcome(probs, rng)
         pool = score_pool[outcome]
         goals_a, goals_b = pool[rng.randrange(len(pool))]
@@ -310,6 +341,27 @@ class Result:
     reach: dict[str, dict[str, float]]  # team -> {round name or "win": probability}
 
 
+def _group_venues(fmt: Format, letter: str, teams: Sequence[str]) -> list[str | None] | None:
+    """One venue country per pair of `teams` (`simulate_group`'s `venues`), or None if the
+    tournament's venues are not known at all."""
+    if fmt.venue is not None:
+        return [fmt.venue] * (len(teams) * (len(teams) - 1) // 2)
+    if fmt.group_venues is not None:
+        return list(fmt.group_venues[letter])
+    return None
+
+
+def _knockout_venues(fmt: Format) -> list[str | None] | None:
+    """One venue country per knockout match, in the order `walk` calls `decide` (each round
+    in `round_sequence` order, bracket order within a round), or None if not known."""
+    if fmt.venue is not None:
+        return [fmt.venue] * (2 * len(fmt.knockout_seeds) - 1)
+    if fmt.knockout_venues is not None:
+        names = round_sequence(len(fmt.knockout_seeds))
+        return [v for name in names for v in fmt.knockout_venues[name]]
+    return None
+
+
 def simulate(
     fmt: Format, match_probs: MatchProbs, score_pool: ScorePool, runs: int = 10_000, seed: int = 0
 ) -> Result:
@@ -321,9 +373,15 @@ def simulate(
     teams = [team for group in fmt.groups.values() for team in group]
     rounds = [*round_sequence(len(fmt.knockout_seeds)), "win"]
     counts = {team: dict.fromkeys(rounds, 0) for team in teams}
+    group_venues = {
+        letter: _group_venues(fmt, letter, group) for letter, group in fmt.groups.items()
+    }
+    knockout_venues = _knockout_venues(fmt)
     for _ in range(runs):
         group_matches = {
-            letter: simulate_group(group, fmt.hosts, match_probs, score_pool, rng)
+            letter: simulate_group(
+                group, fmt.hosts, match_probs, score_pool, rng, group_venues[letter]
+            )
             for letter, group in fmt.groups.items()
         }
         order = {
@@ -331,11 +389,13 @@ def simulate(
             for letter, group in fmt.groups.items()
         }
         slots = bracket_slots(fmt, order, group_matches, rng)
-        reached, champion = walk(
-            fmt.knockout_seeds,
-            slots,
-            lambda a, b: decide_knockout(a, b, home_of(a, b, fmt.hosts), match_probs, rng),
-        )
+        venue_iter = iter(knockout_venues) if knockout_venues is not None else None
+
+        def decide(a: str, b: str, venue_iter=venue_iter) -> str:
+            venue = next(venue_iter) if venue_iter is not None else None
+            return decide_knockout(a, b, home_of(a, b, fmt.hosts, venue), match_probs, rng)
+
+        reached, champion = walk(fmt.knockout_seeds, slots, decide)
         for name, teams_in in reached.items():
             for team in teams_in:
                 counts[team][name] += 1

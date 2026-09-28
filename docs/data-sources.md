@@ -445,10 +445,54 @@ of the two real matches.
 Extra time and penalties are not modelled apart: a 90-minute draw in a knockout match
 goes through with `P(H) / (P(H) + P(A))` of the model's own win chances
 (docs/tournament-spec.md, Simulator); this has no effect on the replay tests, which use
-real results throughout. "Home" in a group or knockout match is a host nation if exactly
-one of the two teams is one, else neutral: a simplification for multi-host tournaments
-(EURO 2020's 11 host cities, EURO 2028's 4 host associations), where the real home
-advantage varies match by match; documented here rather than modelled venue by venue.
+real results throughout. "Home" in a group or knockout match is the team whose own
+country is the real venue, else neutral (docs/tournament-spec.md); where the venue is not
+known match by match (EURO 2028, four host associations, drawn some 2028), `home_of`
+falls back to: a host nation of the whole tournament if exactly one of the two teams is
+one, else neutral. See "Venue country per match slot" below for where the fallback still
+applies and where real venues are used instead.
+
+### Venue country per match slot (checked, tested)
+
+Six of the seven tournaments checked here are single-host: every match, group and
+knockout, was played in the host country (WC 2006, 2010, 2014, 2018, 2022; EURO 2024),
+recorded as `venue` in `tournament_formats.yaml`. WC 2026 (three hosts) and EURO 2028
+(four hosts) have no group draw yet either, so this does not apply to them; EURO 2028's
+`home_of` uses the fallback rule until the draw and the venue schedule are known (both
+due after the spec is frozen).
+
+EURO 2020 is the exception: 11 host cities in 11 countries (9 with a team in the
+tournament; Azerbaijan and Romania are not), so venue country varies match by match
+(`venues.groups` and `venues.knockout` in `tournament_formats.yaml`, one entry per real
+match, keyed by group/round position). Sourced from Wikipedia's "UEFA Euro 2020" article
+(<https://en.wikipedia.org/wiki/UEFA_Euro_2020>, archived
+<https://web.archive.org/web/20260928194405/https://en.wikipedia.org/wiki/UEFA_Euro_2020>:
+the host-cities table, and the note that Dublin's matches were reassigned to Saint
+Petersburg (group stage) and London (round of 16) and Bilbao's to Seville), the six "UEFA
+Euro 2020 Group A" to "Group F" articles (one "Venue: [stadium], [city]" line per group
+match), and "UEFA Euro 2020 knockout phase"
+(<https://en.wikipedia.org/wiki/UEFA_Euro_2020_knockout_phase>, archived
+<https://web.archive.org/web/20260928194446/https://en.wikipedia.org/wiki/UEFA_Euro_2020_knockout_phase>:
+a venue column for every round of 16, quarterfinal, semifinal and final match).
+
+Checked two ways: `tests/test_tournament_replay.py::test_home_of_agrees_with_martj42_neutral_flag`
+compares `home_of`, fed this venue data (or the fallback where there is none), against
+`int_international_matches.neutral` and `home_team_id` for every real match of all ten
+WC 2006-2022/EURO 2008-2024 tournaments (530 matches); it passes with one documented
+exception. Separately, `results.csv`'s own `city`/`country` columns (not otherwise used
+or checked elsewhere in this document) agree with the sourced venues on 50 of the 51
+EURO 2020 matches.
+
+The one exception, in both checks: Wales v Switzerland, EURO 2020, 2021-06-12. Wikipedia
+has it at Baku (neutral for both teams, part of Group A's away-from-Italy fixtures,
+alongside Turkey v Wales and Switzerland v Turkey, also at Baku). martj42 has `city`
+"Cardiff", `country` "Wales" (Wales's own city, not a EURO 2020 venue at all) and
+`neutral` false with `home_team` Wales: an error, not a second real convention, since
+Wales did not play a single tournament match at home. Recorded as
+`NEUTRAL_FLAG_EXCEPTIONS` in `tests/test_tournament_replay.py`; `national_elo.py`'s own
+Elo ratings still read `neutral` from martj42 directly (docs/tournament-spec.md's
+model step, not the simulator), so this one match keeps a small, undetected home-advantage
+error there, immaterial against 369 development finals matches.
 
 ## Open checks
 

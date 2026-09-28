@@ -573,6 +573,7 @@ editions:
   year: 2006
   shape: wc32
   hosts: [germany]
+  venue: germany  # single host: every match, group and knockout, was in Germany
   groups:
     A: [germany, ecuador, poland, costa_rica]
     B: [england, sweden, paraguay, trinidad_and_tobago]
@@ -587,6 +588,7 @@ editions:
   year: 2010
   shape: wc32
   hosts: [south_africa]
+  venue: south_africa  # single host: every match, group and knockout, was in South Africa
   groups:
     A: [uruguay, mexico, south_africa, france]
     B: [argentina, south_korea, greece, nigeria]
@@ -601,6 +603,7 @@ editions:
   year: 2014
   shape: wc32
   hosts: [brazil]
+  venue: brazil  # single host: every match, group and knockout, was in Brazil
   groups:
     A: [brazil, mexico, croatia, cameroon]
     B: [netherlands, chile, spain, australia]
@@ -615,6 +618,7 @@ editions:
   year: 2018
   shape: wc32
   hosts: [russia]
+  venue: russia  # single host: every match, group and knockout, was in Russia
   groups:
     A: [uruguay, russia, saudi_arabia, egypt]
     B: [spain, portugal, iran, morocco]
@@ -629,6 +633,7 @@ editions:
   year: 2022
   shape: wc32
   hosts: [qatar]
+  venue: qatar  # single host: every match, group and knockout, was in Qatar
   groups:
     A: [netherlands, senegal, ecuador, qatar]
     B: [england, united_states, iran, wales]
@@ -720,11 +725,30 @@ editions:
     D: [england, croatia, scotland, czech_republic]
     E: [spain, sweden, poland, slovakia]
     F: [hungary, portugal, france, germany]
+  # 11 host cities in 11 countries (docs/data-sources.md): one venue country per real match,
+  # from the official schedule. group_venues: one per itertools.combinations(group, 2) pair
+  # (turkey-italy, turkey-wales, turkey-switzerland, italy-wales, italy-switzerland,
+  # wales-switzerland, in that order, and so on per group). knockout_venues: one per match,
+  # bracket order (Format.knockout_seeds, then each later round in walk's fold order).
+  venues:
+    groups:
+      A: [italy, azerbaijan, azerbaijan, italy, italy, azerbaijan]
+      B: [denmark, denmark, denmark, russia, russia, russia]
+      C: [netherlands, netherlands, netherlands, romania, romania, romania]
+      D: [england, england, england, scotland, scotland, scotland]
+      E: [spain, spain, spain, russia, russia, russia]
+      F: [hungary, hungary, germany, hungary, germany, germany]
+    knockout:
+      round_of_16: [spain, england, romania, denmark, scotland, england, hungary, netherlands]
+      quarterfinal: [germany, russia, italy, azerbaijan]
+      semifinal: [england, england]
+      final: [england]
 - id: euro2024
   kind: EURO
   year: 2024
   shape: euro24
   hosts: [germany]
+  venue: germany  # single host: every match, group and knockout, was in Germany
   groups:
     A: [germany, scotland, hungary, switzerland]
     B: [spain, croatia, italy, albania]
