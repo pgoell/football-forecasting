@@ -32,3 +32,22 @@ seeds:
         season: varchar
         sha256: varchar
         bytes: bigint
+
+  - name: understat_files
+    description: >
+      The Understat data version: sha256 and size of each stored JSON file,
+      written by scripts/download_understat.py.
+    config:
+      column_types:
+        league: varchar
+        season: varchar
+        sha256: varchar
+        bytes: bigint
+
+  - name: understat_team_names
+    description: Understat team name to Football-Data team name, per league.
+    columns:
+      - name: understat_name
+        data_tests: [not_null]
+      - name: football_data_name
+        data_tests: [not_null]

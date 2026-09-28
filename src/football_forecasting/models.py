@@ -15,7 +15,7 @@ from scipy.stats import poisson
 from football_forecasting.data import Fixture, Match, Odds
 
 Probs = tuple[float, float, float]
-Row = tuple[str, str, str, int, int, float, tuple[int, int] | None]
+Row = tuple[str, str, str, int, int, float, tuple[int, int] | None, tuple[float, float] | None]
 OUTCOMES = ("H", "D", "A")
 
 
@@ -192,7 +192,7 @@ class Poisson:
             "sd": sd,
         }
         # (league) -> rows of (season, home, away, home goals, away goals, result_at in days,
-        # shots on target or None)
+        # shots on target or None, xG or None)
         self.results: dict[str, list[Row]] = defaultdict(list)
         self.teams: dict[tuple[str, str], set[str]] = defaultdict(set)  # (league, season)
         self.fits: dict[str, tuple[int, str, dict[str, int], np.ndarray]] = {}
@@ -201,7 +201,15 @@ class Poisson:
         f = match.fixture
         days = match.result_at.timestamp() / 86400
         self.results[f.league].append(
-            (f.season, f.home_team, f.away_team, *match.goals, days, match.shots_on_target)
+            (
+                f.season,
+                f.home_team,
+                f.away_team,
+                *match.goals,
+                days,
+                match.shots_on_target,
+                match.xg,
+            )
         )
         self.teams[f.league, f.season] |= {f.home_team, f.away_team}
 
@@ -298,6 +306,36 @@ class ShotsDixonColes(DixonColes):
         c = goals[known].sum() / max(shots[known].sum(), 1)
         blend = np.where(known[:, None], (1 - self.w) * goals + self.w * c * shots, goals)
         return blend[:, 0], blend[:, 1]
+
+
+class XgDixonColes(DixonColes):
+    """Dixon-Coles with the rates fitted to (1 - w) * goals + w * xG (Understat).
+    Matches without xG (before 2014/15) count their goals, so the first seasons
+    lean on goals until the window fills. Predicts from 2014/15 only. The
+    low-score factor still uses the score. w chosen on development seasons
+    2014/15 to 2018/19 (research/xg-weight/)."""
+
+    version = "xg-dc-v1"
+    first_season = "1415"
+
+    def __init__(self, xg_weight: float = 0.25) -> None:
+        super().__init__()
+        self.w = xg_weight
+        self.params["xg_weight"] = xg_weight
+
+    def counts(self, rows: list[Row]) -> tuple[np.ndarray, np.ndarray]:
+        goals = np.array([r[3:5] for r in rows], dtype=float)
+        known = np.array([r[7] is not None for r in rows])
+        xg = np.array([r[7] or (0.0, 0.0) for r in rows])
+        blend = np.where(known[:, None], (1 - self.w) * goals + self.w * xg, goals)
+        return blend[:, 0], blend[:, 1]
+
+    def predict(
+        self, fixture: Fixture, horizon: str, as_of: datetime, odds: list[Odds]
+    ) -> Probs | None:
+        if fixture.season < self.first_season:
+            return None
+        return super().predict(fixture, horizon, as_of, odds)
 
 
 def tau(hg: np.ndarray, ag: np.ndarray, mu, nu, rho):

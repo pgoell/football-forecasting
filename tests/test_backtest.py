@@ -18,6 +18,7 @@ from football_forecasting.models import (
     Poisson,
     Row,
     ShotsDixonColes,
+    XgDixonColes,
     score_probs,
 )
 from football_forecasting.report import report
@@ -228,11 +229,11 @@ def test_goal_models_learn_team_strength():
         assert p is not None and p[0] > 0.6
 
 
-def test_shots_counts_blend_goals_and_shots_on_target():
+def test_counts_blend_goals_with_shots_or_xg():
     rows: list[Row] = [
-        ("0506", "A", "B", 2, 0, 0.0, (5, 3)),
-        ("0506", "B", "A", 1, 1, 1.0, (3, 5)),
-        ("0506", "A", "B", 3, 1, 2.0, None),
+        ("0506", "A", "B", 2, 0, 0.0, (5, 3), (1.5, 0.5)),
+        ("0506", "B", "A", 1, 1, 1.0, (3, 5), (0.5, 2.5)),
+        ("0506", "A", "B", 3, 1, 2.0, None, None),
     ]
     # goals per shot on target over the rows that have them: 4 / 16
     home, away = ShotsDixonColes(1.0).counts(rows)
@@ -245,6 +246,8 @@ def test_shots_counts_blend_goals_and_shots_on_target():
     shots, dc = ShotsDixonColes(0.0), DixonColes()
     a, b = run([shots], ms, {}), run([dc], ms, {})
     assert [p.p_home for p in a] == pytest.approx([p.p_home for p in b])
+    home, away = XgDixonColes(0.5).counts(rows)
+    assert list(home) == [1.75, 0.75, 3.0] and list(away) == [0.25, 1.75, 1.0]
 
 
 def test_market_aware_fit_recovers_weights():

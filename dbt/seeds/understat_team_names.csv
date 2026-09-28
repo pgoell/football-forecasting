@@ -1,0 +1,68 @@
+league,football_data_name,understat_name
+D1,Augsburg,Augsburg
+D1,Bayern Munich,Bayern Munich
+D1,Bielefeld,Arminia Bielefeld
+D1,Bochum,Bochum
+D1,Darmstadt,Darmstadt
+D1,Dortmund,Borussia Dortmund
+D1,Ein Frankfurt,Eintracht Frankfurt
+D1,Elversberg,Elversberg
+D1,FC Koln,FC Cologne
+D1,Fortuna Dusseldorf,Fortuna Duesseldorf
+D1,Freiburg,Freiburg
+D1,Greuther Furth,Greuther Fuerth
+D1,Hamburg,Hamburger SV
+D1,Hannover,Hannover 96
+D1,Heidenheim,FC Heidenheim
+D1,Hertha,Hertha Berlin
+D1,Hoffenheim,Hoffenheim
+D1,Holstein Kiel,Holstein Kiel
+D1,Ingolstadt,Ingolstadt
+D1,Leverkusen,Bayer Leverkusen
+D1,M'gladbach,Borussia M.Gladbach
+D1,Mainz,Mainz 05
+D1,Nurnberg,Nuernberg
+D1,Paderborn,Paderborn
+D1,RB Leipzig,RasenBallsport Leipzig
+D1,Schalke 04,Schalke 04
+D1,St Pauli,St. Pauli
+D1,Stuttgart,VfB Stuttgart
+D1,Union Berlin,Union Berlin
+D1,Werder Bremen,Werder Bremen
+D1,Wolfsburg,Wolfsburg
+E0,Arsenal,Arsenal
+E0,Aston Villa,Aston Villa
+E0,Bournemouth,Bournemouth
+E0,Brentford,Brentford
+E0,Brighton,Brighton
+E0,Burnley,Burnley
+E0,Cardiff,Cardiff
+E0,Chelsea,Chelsea
+E0,Coventry,Coventry
+E0,Crystal Palace,Crystal Palace
+E0,Everton,Everton
+E0,Fulham,Fulham
+E0,Huddersfield,Huddersfield
+E0,Hull,Hull
+E0,Ipswich,Ipswich
+E0,Leeds,Leeds
+E0,Leicester,Leicester
+E0,Liverpool,Liverpool
+E0,Luton,Luton
+E0,Man City,Manchester City
+E0,Man United,Manchester United
+E0,Middlesbrough,Middlesbrough
+E0,Newcastle,Newcastle United
+E0,Norwich,Norwich
+E0,Nott'm Forest,Nottingham Forest
+E0,QPR,Queens Park Rangers
+E0,Sheffield United,Sheffield United
+E0,Southampton,Southampton
+E0,Stoke,Stoke
+E0,Sunderland,Sunderland
+E0,Swansea,Swansea
+E0,Tottenham,Tottenham
+E0,Watford,Watford
+E0,West Brom,West Bromwich Albion
+E0,West Ham,West Ham
+E0,Wolves,Wolverhampton Wanderers

@@ -37,9 +37,10 @@ class Match:
     result_at: datetime
     # home, away; None in seasons without them (D1 2002/03 to 2005/06)
     shots_on_target: tuple[int, int] | None = None
+    xg: tuple[float, float] | None = None  # Understat, 2014/15 onward
 
 
-def pair(home: int | None, away: int | None) -> tuple[int, int] | None:
+def pair[T](home: T | None, away: T | None) -> tuple[T, T] | None:
     return None if home is None or away is None else (home, away)
 
 
@@ -66,12 +67,13 @@ def load(warehouse: Path = WAREHOUSE) -> tuple[list[Match], dict[str, list[Odds]
             row[9],
             row[10],
             pair(row[11], row[12]),
+            pair(row[13], row[14]),
         )
         for row in con.execute(
             """
             select match_id, league, season, home_team, away_team,
                 result, home_goals, away_goals, pre_at, close_at, result_at,
-                home_shots_on_target, away_shots_on_target
+                home_shots_on_target, away_shots_on_target, home_xg, away_xg
             from int_matches
             where season < ?
             order by match_id

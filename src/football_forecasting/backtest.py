@@ -40,6 +40,7 @@ from football_forecasting.models import (
     Naive,
     Poisson,
     ShotsDixonColes,
+    XgDixonColes,
 )
 from football_forecasting.report import report
 
@@ -240,6 +241,7 @@ def main() -> None:
         Poisson(),
         DixonColes(),
         ShotsDixonColes(),
+        XgDixonColes(),
     ]
     predictions = run(models, matches, odds)
     seasons = sorted(m.fixture.season for m in matches)

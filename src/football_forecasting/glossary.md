@@ -95,6 +95,14 @@ The dixon-coles model, fitted to a blend of goals and shots on target instead of
 - **w** was chosen on the development seasons only, from 0, 0.25, 0.5, 0.75 and 1: the more weight on shots, the worse the forecasts, and 0.25 is the most that cost nothing.
 - The files have no shots on target for the Bundesliga from 2002/03 to 2005/06; those matches count their goals.
 
+### xg-dc
+
+The shots-dc idea with expected goals instead of shots on target.
+
+- **xG** (expected goals) gives each shot the chance that it becomes a goal, judged from where and how it was taken; a team's xG in a match is the sum over its shots. Unlike shots on target, it knows a tap-in from a long shot. Taken from Understat.
+- **How.** Each match counts `(1 − w) × goals + w × xG` for each team, with **w = 0.25**, chosen on the development seasons from 2014/15 only, from 0, 0.25, 0.5, 0.75 and 1. The rest is dixon-coles unchanged.
+- Understat starts in 2014/15, so the model forecasts from 2014/15 on; in its first seasons the older matches in its window count only their goals.
+
 ### market-consensus
 
 What the bookmakers think.
@@ -106,9 +114,9 @@ What the bookmakers think.
 
 The market is the bar to beat. Beating it clearly would more likely point to a bug or leakage than to a real edge.
 
-### market-elo, market-dc and market-shots
+### market-elo, market-dc, market-shots and market-xg
 
-The market forecast, adjusted by one of our models: elo for market-elo, dixon-coles for market-dc, shots-dc for market-shots. They answer one question: does our model know anything the market does not?
+The market forecast, adjusted by one of our models: elo for market-elo, dixon-coles for market-dc, shots-dc for market-shots, xg-dc for market-xg. They answer one question: does our model know anything the market does not?
 
 - **Blend.** Each chance is `market^a × model^b × e^c`, then the three are scaled to add up to 100%. `b` is the weight our model gets; `a = 1`, `b = 0`, `c = 0` gives the market back. `c` is a fixed shift for home wins and one for draws.
 - **Fitted** before each season on all earlier seasons from 2005/06 (a multinomial logistic regression, no penalty), separately for pre-match and closing forecasts. So the first season has no forecasts: they start in 2006/07 pre-match and 2013/14 closing (closing odds start in 2012/13).
