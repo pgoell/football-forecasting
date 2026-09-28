@@ -3,16 +3,17 @@ models:
     description: Every Football-Data CSV row as text, unioned by column name.
 
   - name: stg_football_data__matches
-    description: One row per match, E0 and D1, from Football-Data.
+    description: One row per match, leagues in seeds/leagues.csv, from Football-Data.
     columns:
       - name: match_id
         description: league, date and home team; a team plays at most once a day
         data_tests: [unique, not_null]
       - name: league
         data_tests:
-          - accepted_values:
+          - relationships:
               arguments:
-                values: [E0, D1]
+                to: ref('leagues')
+                field: league
       - name: season
         description: "four digits, 2526 = 2025/26"
         data_tests: [not_null]

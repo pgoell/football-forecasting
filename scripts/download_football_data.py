@@ -2,7 +2,7 @@
 # requires-python = ">=3.13"
 # dependencies = []
 # ///
-"""Download Football-Data CSVs for E0 and D1 into data/raw/football-data/.
+"""Download Football-Data CSVs (dbt/seeds/leagues.csv) into data/raw/football-data/.
 
 Files are stored as UTF-8 with Unix line endings: a few old seasons come in
 Windows-1252, newer ones with a BOM. Each run overwrites the files and appends
@@ -14,7 +14,7 @@ stored files (sha256 of the UTF-8 text dbt reads). After a download,
 `git diff dbt/seeds/football_data_files.csv` shows which files differ from the
 data version the repo was built with.
 
-    uv run scripts/download_football_data.py [--first 2000] [--last 2026]
+    uv run scripts/download_football_data.py [--first 2000] [--last 2026] [--leagues E1 E2]
 """
 
 import argparse
@@ -25,11 +25,14 @@ import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
 
-LEAGUES = ["E0", "D1"]
 URL = "https://www.football-data.co.uk/mmz4281/{season}/{league}.csv"
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "raw" / "football-data"
 RECORD = ROOT / "dbt" / "seeds" / "football_data_files.csv"
+LEAGUES = [
+    line.split(",")[0]
+    for line in (ROOT / "dbt" / "seeds" / "leagues.csv").read_text().splitlines()[1:]
+]
 
 
 def season_code(start_year: int) -> str:
@@ -50,12 +53,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--first", type=int, default=2000, help="first season start year")
     parser.add_argument("--last", type=int, default=2026, help="last season start year")
+    parser.add_argument("--leagues", nargs="+", default=LEAGUES, help="league codes")
     args = parser.parse_args()
 
     manifest = OUT / "_manifest.jsonl"
     record = {}
     OUT.mkdir(parents=True, exist_ok=True)
-    for league in LEAGUES:
+    for league in args.leagues:
         for year in range(args.first, args.last + 1):
             season = season_code(year)
             url = URL.format(season=season, league=league)

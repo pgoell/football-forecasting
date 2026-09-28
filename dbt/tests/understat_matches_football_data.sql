@@ -1,4 +1,4 @@
--- Every Football-Data match from 2014/15 on has exactly one played Understat
+-- Every E0 and D1 Football-Data match from 2014/15 on has exactly one played Understat
 -- match with the same league, season and teams, and the same score; and every
 -- played Understat match has a Football-Data match, except in the running
 -- season, where the two downloads may be a matchday apart.
@@ -21,7 +21,9 @@ joined as (
         u.home_goals as us_home,
         u.away_goals as us_away,
         count(*) over (partition by f.match_id) as understat_rows
-    from {{ ref('stg_football_data__matches') }} as f
+    from (
+        select * from {{ ref('stg_football_data__matches') }} where league in ('E0', 'D1')
+    ) as f
     full outer join understat as u using (league, season, home_team, away_team)
     where coalesce(f.season, u.season) >= '1415'
 )
