@@ -1,0 +1,31 @@
+# mise.toml: toolchain pins and task definitions
+
+[tools]
+python = "3.13"
+uv     = "latest"
+
+# ─── Bootstrap ──────────────────────────────────────────────────────────────
+
+[tasks.install]
+description = "Install dependencies"
+run = "uv sync"
+
+# ─── Testing ────────────────────────────────────────────────────────────────
+
+[tasks.test]
+description = "Run tests"
+run = "uv run pytest"
+
+# ─── Lint & format ──────────────────────────────────────────────────────────
+
+[tasks.lint]
+description = "Lint, format-check and type-check"
+run = [
+  "uv run ruff check",
+  "uv run ruff format --check",
+  "uv run ty check",
+]
+
+[tasks.fmt]
+description = "Auto-format"
+run = "uv run ruff format"
