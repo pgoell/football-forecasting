@@ -193,6 +193,48 @@ xG counts as known with the result (`result_at`). How Understat computes xG, and
 
 Source: <https://www.sports-reference.com/termsofuse.html> (FBref's owner, "Last Updated: May 19, 2023"), archived <https://web.archive.org/web/20260812025756/https://www.sports-reference.com/termsofuse.html>. The second clause covers a forecasting model fitted on their data, however it is fetched. Rate limit, for the record: "we will block users sending requests to: FBref and Stathead sites more often than ten requests in a minute" (<https://www.sports-reference.com/bot-traffic.html>, archived <https://web.archive.org/web/20260928163442/https://www.sports-reference.com/bot-traffic.html>).
 
+## International football (for docs/tournament-spec.md)
+
+Checked on 2026-09-28, before the tournament spec is frozen. No international data is stored yet.
+
+### martj42/international_results: licence and score rules (checked)
+
+Licence: CC0 1.0 Universal, read in the repo's `LICENSE` file (<https://github.com/martj42/international_results/blob/master/LICENSE>, archived <https://web.archive.org/web/20260928180441/https://github.com/martj42/international_results/blob/master/LICENSE>).
+
+> "`home_score` - full-time home team score including extra time, not including penalty-shootouts"
+
+> "For home and away teams the *current* name of the team has been used."
+
+Source: the repo's README (<https://github.com/martj42/international_results/blob/master/README.md>, archived <https://web.archive.org/web/20260928180505/https://github.com/martj42/international_results/blob/master/README.md>). Files: `results.csv`, `goalscorers.csv`, `shootouts.csv`, `former_names.csv`. The header of `goalscorers.csv` has a `minute` column (`date,home_team,away_team,team,scorer,minute,own_goal,penalty`), so 90-minute scores can be derived; how it records stoppage time, and whether every tournament goal is listed, is not checked (**unverified**, to become a dbt test).
+
+### eloratings.net (unverified terms)
+
+Files such as `https://www.eloratings.net/World.tsv` and `https://www.eloratings.net/<year>_results.tsv` answer without a key. No terms of use found: `/robots.txt` returns 404, and the about page loads its text by script, so it was not read. Column meanings of the `.tsv` files: not checked (**unverified**).
+
+### The Odds API: internationals (checked)
+
+> "Historical odds data is available from June 6th 2020, with snapshots taken at 10 minute intervals. From September 2022, historical odds snapshots are available at 5 minute intervals."
+
+Cost: historical odds and historical event odds cost "10 per region per market"; historical events cost 1, nothing if no events. Source: <https://the-odds-api.com/liveapi/guides/v4/>, archived <https://web.archive.org/web/20260928180233/https://the-odds-api.com/liveapi/guides/v4/>. The guide says historical data is "only available on paid usage plans"; the home page lists historical odds for every plan, the free one included (<https://web.archive.org/web/20260928180421/https://the-odds-api.com/>). Assume paid.
+
+Plans: 20K credits $30/mo, 100K $59/mo, 5M $119/mo, 15M $249/mo.
+
+Earliest snapshots, featured markets (<https://the-odds-api.com/historical-odds-data/>, archived <https://web.archive.org/web/20260928180216/https://the-odds-api.com/historical-odds-data/>):
+
+| Key | Title | Earliest |
+|---|---|---|
+| `soccer_fifa_world_cup` | FIFA World Cup | 2022-04-03 |
+| `soccer_uefa_european_championship` | UEFA Euro 2024 | 2021-05-19 |
+| `soccer_uefa_nations_league` | UEFA Nations League | 2022-06-11 |
+| `soccer_uefa_euro_qualification` | UEFA Euro Qualification | 2023-10-12 |
+| `soccer_fifa_world_cup_qualifiers_europe` | FIFA World Cup Qualifiers, Europe | 2025-03-24 |
+| `soccer_conmebol_copa_america` | Copa América | 2024-04-10 |
+| outrights: FIFA World Cup Winner | | 2022-03-29 |
+
+No key for friendlies; no EURO winner outright listed. The EURO key starts on 2021-05-19, before EURO 2020 (11 June 2021), so it should hold that tournament; whether every match of EURO 2020 has odds is not checked (**unverified** until a paid key queries it).
+
+Cost for the spec: 270 tournament matches with odds (EURO 2020 51, WC 2022 64, EURO 2024 51, WC 2026 104), two snapshots each (`pre`, `close`), regions `eu` and `uk`, market `h2h`: 270 × 2 × 2 × 10 = 10,800 credits, plus about 300 for event lists and 40 for winner odds. One month of the 20K plan ($30) covers all of it.
+
 ## Open checks
 
 - 2 rows with a margin over 30% (1 William Hill, 1 Interwetten): the dbt test `odds_overround_plausible` warns on them; likely source errors, not yet traced.
