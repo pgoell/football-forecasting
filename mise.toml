@@ -47,6 +47,10 @@ run = [
   "uv run python -m football_forecasting.market_aware",
 ]
 
+[tasks."national-elo:backtest"]
+description = "Development-only national-elo-v1 backtest (docs/tournament-spec.md); validation and the holdout are never touched"
+run = "uv run python -m football_forecasting.national_elo_backtest"
+
 [tasks.dashboard]
 description = "Serve the backtest dashboard on localhost:8501"
 run = "uv run streamlit run src/football_forecasting/dashboard.py --server.address 127.0.0.1 --server.headless true"
