@@ -54,6 +54,7 @@ def all_models():
 
 class Spy:
     version = "spy"
+    params: dict[str, float] = {}  # noqa: RUF012
 
     def __init__(self) -> None:
         self.seen: dict[str, datetime] = {}
@@ -124,13 +125,45 @@ def test_probabilities_sum_to_one():
 
 def test_stored_predictions_never_change(tmp_path):
     ms = matches()
-    predictions = run([Naive()], ms, {})
+    models = [Naive()]
+    predictions = run(models, ms, {})
     path = tmp_path / "p.duckdb"
-    assert save(predictions, path) == len(predictions)
-    assert save(predictions, path) == 0
+    assert save(predictions, models, "0405..0708", path) == len(predictions)
+    assert save(predictions, models, "0405..0708", path) == 0
     changed = [dataclasses.replace(predictions[0], p_home=0.9), *predictions[1:]]
     with pytest.raises(ValueError, match="bump the model version"):
-        save(changed, path)
+        save(changed, models, "0405..0708", path)
+
+
+def test_every_run_is_recorded(tmp_path):
+    ms = matches()
+    models = [Naive(), Elo(k=30)]
+    predictions = run(models, ms, {})
+    path = tmp_path / "p.duckdb"
+    save(predictions, models, "0405..0708", path)
+    save(predictions, models, "0405..0708", path)
+    con = duckdb.connect(str(path))
+    runs = con.execute(
+        """
+        select model_version, params, predictions, new_predictions
+        from runs order by started_at, model_version
+        """
+    ).fetchall()
+    n = len(predictions) // 2
+    assert runs == [
+        ("elo-v1", '{"k": 30, "home_advantage": 60, "promoted_rating": 1400}', n, n),
+        ("naive-v1", "{}", n, n),
+        ("elo-v1", '{"k": 30, "home_advantage": 60, "promoted_rating": 1400}', n, 0),
+        ("naive-v1", "{}", n, 0),
+    ]
+    # predictions keep the run that first stored them
+    stored_by = con.execute(
+        """
+        select distinct p.run_id = r.run_id from predictions as p
+        cross join (select run_id from runs order by started_at limit 1) as r
+        """
+    ).fetchall()
+    assert stored_by == [(True,)]
 
 
 def test_scores(tmp_path):
@@ -151,7 +184,8 @@ def test_scores(tmp_path):
         ("m2", "close", 0.2, 0.3, 0.5),
     ]
     path = tmp_path / "p.duckdb"
-    save([Prediction(m + h, m, h, at, "x", *p, *[None] * 3) for m, h, *p in predictions], path)
+    rows = [Prediction(m + h, m, h, at, "x", *p, *[None] * 3) for m, h, *p in predictions]
+    save(rows, [], "0506..1920", path)
     text = report(path, ("x",), warehouse)
     # m1: log loss -ln 0.5, Brier 0.25 + 0.09 + 0.04, RPS ((0.5 - 1)^2 + 0.2^2) / 2
     assert f"| development | pre | x | 1 | {-math.log(0.5):.4f} | 0.3800 | 0.1450 |" in text

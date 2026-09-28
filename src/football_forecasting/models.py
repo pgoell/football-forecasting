@@ -19,6 +19,7 @@ OUTCOMES = ("H", "D", "A")
 
 class Model(Protocol):
     version: str
+    params: dict[str, float]
 
     def observe(self, fixture: Fixture, result: str) -> None: ...
 
@@ -33,6 +34,7 @@ class Naive:
     version = "naive-v1"
 
     def __init__(self) -> None:
+        self.params: dict[str, float] = {}
         self.counts: dict[tuple[str, str], Counter[str]] = defaultdict(Counter)
 
     def observe(self, fixture: Fixture, result: str) -> None:
@@ -56,6 +58,9 @@ class MarketConsensus:
     from the odds of the horizon's own moment, renormalized to sum to 1."""
 
     version = "market-consensus-v1"
+
+    def __init__(self) -> None:
+        self.params: dict[str, float] = {}
 
     def observe(self, fixture: Fixture, result: str) -> None:
         pass
@@ -89,11 +94,16 @@ class Elo:
         self.k = k
         self.home_advantage = home_advantage
         self.promoted_rating = promoted_rating
+        self.params: dict[str, float] = {
+            "k": k,
+            "home_advantage": home_advantage,
+            "promoted_rating": promoted_rating,
+        }
         self.ratings: dict[tuple[str, str], float] = {}
         self.teams: dict[tuple[str, str], set[str]] = defaultdict(set)  # (league, season)
         self.history: list[tuple[float, int]] = []  # (rating difference, outcome index)
         self.fit_season = ""
-        self.params = np.zeros(3)
+        self.logit = np.zeros(3)
 
     def rating(self, fixture: Fixture, team: str) -> float:
         league, season = fixture.league, fixture.season
@@ -124,9 +134,9 @@ class Elo:
         if not self.history:
             return None
         if fixture.season != self.fit_season:
-            self.params = fit_ordered_logit(self.history)
+            self.logit = fit_ordered_logit(self.history)
             self.fit_season = fixture.season
-        return ordered_logit(self.params, self.difference(fixture) / 400)
+        return ordered_logit(self.logit, self.difference(fixture) / 400)
 
 
 def ordered_logit(params: np.ndarray, x: float | np.ndarray) -> Probs:

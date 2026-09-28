@@ -34,6 +34,17 @@ mise run backtest  # predict, store in data/predictions.duckdb, print scores
 
 The engine (`src/football_forecasting/backtest.py`) walks matches in time order and hands a model only results and odds known before the prediction time; its docstring gives the timing rules. Stored predictions never change: a model that gives new numbers needs a new version. Runs and results: [docs/experiment-log.md](docs/experiment-log.md).
 
+Each backtest run gets a row per model in the `runs` table (git commit, uncommitted changes, parameters, seasons seen); each prediction keeps the run that first stored it.
+
+## Dashboard
+
+```sh
+mise run dashboard         # local, http://127.0.0.1:8501
+mise run dashboard:deploy  # container on the VPS, https://football.pascalkraus.com
+```
+
+Scores, log loss by season, the gap to a reference model, calibration and runs, read from the stores read-only. Holdout seasons never reach it. The public route sits behind the GitHub login in `server-infra` (Caddy route and Cloudflare DNS record there).
+
 ## Phases
 
 0. Define the experiment
