@@ -78,3 +78,53 @@ models:
         data_tests: [not_null]
       - name: is_result
         description: false for matches not yet played
+
+  - name: stg_international_results__matches
+    description: >
+      One row per match from martj42/international_results, with the
+      90-minute score derived from goalscorers.csv.
+    columns:
+      - name: match_id
+        description: date, home and away team (martj42 names), and a count for a second match that day
+        data_tests: [unique, not_null]
+      - name: home_team_id
+        description: from seeds/team_names.csv; null for teams eloratings.net does not rate
+      - name: home_score
+        description: full time, extra time included, shootout excluded
+        data_tests: [not_null]
+      - name: away_score
+        data_tests: [not_null]
+      - name: home_score_90
+        description: goals at minute 90 or before (stoppage included); null unless score_90_reliable
+      - name: goals_complete
+        description: goalscorers.csv lists every goal of the match, each with a minute
+      - name: after_90
+        description: listed goals after minute 90
+      - name: awarded
+        description: in seeds/international_awarded_matches.csv; the score is a ruling, not a result
+        data_tests: [not_null]
+      - name: score_90_reliable
+        description: >
+          goals_complete, not awarded, and (outside WC and EURO finals) no goal
+          after minute 90; see tests/score_90_only_where_reliable.sql
+        data_tests: [not_null]
+      - name: finals
+        description: WC or EURO for finals matches, else null
+      - name: edition
+        description: year of the finals (EURO 2020 played in 2021); null outside finals
+
+  - name: stg_eloratings__matches
+    description: >
+      One row per match from the eloratings.net yearly results files, codes
+      mapped to team ids, with pre- and post-match ratings.
+    columns:
+      - name: match_date
+        description: null for one 2004 match with an unknown day
+      - name: code1
+        description: current eloratings.net code of the first team (home unless venue says otherwise)
+        data_tests: [not_null]
+      - name: venue
+        description: code of the country played in; null when team 1 played at home
+      - name: change
+        description: rating points team 1 gained; team 2 lost the same
+        data_tests: [not_null]

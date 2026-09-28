@@ -1,0 +1,803 @@
+shapes:
+  wc32:
+    format_version: wc32-v1
+    tiebreak: wc
+    third_place_advance: 0
+    knockout_seeds:
+    - [1A, 2B]
+    - [1C, 2D]
+    - [1E, 2F]
+    - [1G, 2H]
+    - [1B, 2A]
+    - [1D, 2C]
+    - [1F, 2E]
+    - [1H, 2G]
+  wc48:
+    format_version: wc48-v1
+    tiebreak: wc2026
+    third_place_advance: 8
+    knockout_seeds:
+    - [1E, 3-4]
+    - [1I, 3-6]
+    - [2A, 2B]
+    - [1F, 2C]
+    - [2K, 2L]
+    - [1H, 2J]
+    - [1D, 3-3]
+    - [1G, 3-5]
+    - [1C, 2F]
+    - [2E, 2I]
+    - [1A, 3-1]
+    - [1L, 3-8]
+    - [1J, 2H]
+    - [2D, 2G]
+    - [1B, 3-2]
+    - [1K, 3-7]
+    third_place_table:
+      E,F,G,H,I,J,K,L: {E: 1, J: 2, I: 3, F: 4, H: 5, G: 6, L: 7, K: 8}
+      D,F,G,H,I,J,K,L: {H: 1, G: 2, I: 3, D: 4, J: 5, F: 6, L: 7, K: 8}
+      D,E,G,H,I,J,K,L: {E: 1, J: 2, I: 3, D: 4, H: 5, G: 6, L: 7, K: 8}
+      D,E,F,H,I,J,K,L: {E: 1, J: 2, I: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      D,E,F,G,I,J,K,L: {E: 1, G: 2, I: 3, D: 4, J: 5, F: 6, L: 7, K: 8}
+      D,E,F,G,H,J,K,L: {E: 1, G: 2, J: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      D,E,F,G,H,I,K,L: {E: 1, G: 2, I: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      D,E,F,G,H,I,J,L: {E: 1, G: 2, J: 3, D: 4, H: 5, F: 6, L: 7, I: 8}
+      D,E,F,G,H,I,J,K: {E: 1, G: 2, J: 3, D: 4, H: 5, F: 6, I: 7, K: 8}
+      C,F,G,H,I,J,K,L: {H: 1, G: 2, I: 3, C: 4, J: 5, F: 6, L: 7, K: 8}
+      C,E,G,H,I,J,K,L: {E: 1, J: 2, I: 3, C: 4, H: 5, G: 6, L: 7, K: 8}
+      C,E,F,H,I,J,K,L: {E: 1, J: 2, I: 3, C: 4, H: 5, F: 6, L: 7, K: 8}
+      C,E,F,G,I,J,K,L: {E: 1, G: 2, I: 3, C: 4, J: 5, F: 6, L: 7, K: 8}
+      C,E,F,G,H,J,K,L: {E: 1, G: 2, J: 3, C: 4, H: 5, F: 6, L: 7, K: 8}
+      C,E,F,G,H,I,K,L: {E: 1, G: 2, I: 3, C: 4, H: 5, F: 6, L: 7, K: 8}
+      C,E,F,G,H,I,J,L: {E: 1, G: 2, J: 3, C: 4, H: 5, F: 6, L: 7, I: 8}
+      C,E,F,G,H,I,J,K: {E: 1, G: 2, J: 3, C: 4, H: 5, F: 6, I: 7, K: 8}
+      C,D,G,H,I,J,K,L: {H: 1, G: 2, I: 3, C: 4, J: 5, D: 6, L: 7, K: 8}
+      C,D,F,H,I,J,K,L: {C: 1, J: 2, I: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      C,D,F,G,I,J,K,L: {C: 1, G: 2, I: 3, D: 4, J: 5, F: 6, L: 7, K: 8}
+      C,D,F,G,H,J,K,L: {C: 1, G: 2, J: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      C,D,F,G,H,I,K,L: {C: 1, G: 2, I: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      C,D,F,G,H,I,J,L: {C: 1, G: 2, J: 3, D: 4, H: 5, F: 6, L: 7, I: 8}
+      C,D,F,G,H,I,J,K: {C: 1, G: 2, J: 3, D: 4, H: 5, F: 6, I: 7, K: 8}
+      C,D,E,H,I,J,K,L: {E: 1, J: 2, I: 3, C: 4, H: 5, D: 6, L: 7, K: 8}
+      C,D,E,G,I,J,K,L: {E: 1, G: 2, I: 3, C: 4, J: 5, D: 6, L: 7, K: 8}
+      C,D,E,G,H,J,K,L: {E: 1, G: 2, J: 3, C: 4, H: 5, D: 6, L: 7, K: 8}
+      C,D,E,G,H,I,K,L: {E: 1, G: 2, I: 3, C: 4, H: 5, D: 6, L: 7, K: 8}
+      C,D,E,G,H,I,J,L: {E: 1, G: 2, J: 3, C: 4, H: 5, D: 6, L: 7, I: 8}
+      C,D,E,G,H,I,J,K: {E: 1, G: 2, J: 3, C: 4, H: 5, D: 6, I: 7, K: 8}
+      C,D,E,F,I,J,K,L: {C: 1, J: 2, E: 3, D: 4, I: 5, F: 6, L: 7, K: 8}
+      C,D,E,F,H,J,K,L: {C: 1, J: 2, E: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      C,D,E,F,H,I,K,L: {C: 1, E: 2, I: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      C,D,E,F,H,I,J,L: {C: 1, J: 2, E: 3, D: 4, H: 5, F: 6, L: 7, I: 8}
+      C,D,E,F,H,I,J,K: {C: 1, J: 2, E: 3, D: 4, H: 5, F: 6, I: 7, K: 8}
+      C,D,E,F,G,J,K,L: {C: 1, G: 2, E: 3, D: 4, J: 5, F: 6, L: 7, K: 8}
+      C,D,E,F,G,I,K,L: {C: 1, G: 2, E: 3, D: 4, I: 5, F: 6, L: 7, K: 8}
+      C,D,E,F,G,I,J,L: {C: 1, G: 2, E: 3, D: 4, J: 5, F: 6, L: 7, I: 8}
+      C,D,E,F,G,I,J,K: {C: 1, G: 2, E: 3, D: 4, J: 5, F: 6, I: 7, K: 8}
+      C,D,E,F,G,H,K,L: {C: 1, G: 2, E: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      C,D,E,F,G,H,J,L: {C: 1, G: 2, J: 3, D: 4, H: 5, F: 6, L: 7, E: 8}
+      C,D,E,F,G,H,J,K: {C: 1, G: 2, J: 3, D: 4, H: 5, F: 6, E: 7, K: 8}
+      C,D,E,F,G,H,I,L: {C: 1, G: 2, E: 3, D: 4, H: 5, F: 6, L: 7, I: 8}
+      C,D,E,F,G,H,I,K: {C: 1, G: 2, E: 3, D: 4, H: 5, F: 6, I: 7, K: 8}
+      C,D,E,F,G,H,I,J: {C: 1, G: 2, J: 3, D: 4, H: 5, F: 6, E: 7, I: 8}
+      B,F,G,H,I,J,K,L: {H: 1, J: 2, B: 3, F: 4, I: 5, G: 6, L: 7, K: 8}
+      B,E,G,H,I,J,K,L: {E: 1, J: 2, I: 3, B: 4, H: 5, G: 6, L: 7, K: 8}
+      B,E,F,H,I,J,K,L: {E: 1, J: 2, B: 3, F: 4, I: 5, H: 6, L: 7, K: 8}
+      B,E,F,G,I,J,K,L: {E: 1, J: 2, B: 3, F: 4, I: 5, G: 6, L: 7, K: 8}
+      B,E,F,G,H,J,K,L: {E: 1, J: 2, B: 3, F: 4, H: 5, G: 6, L: 7, K: 8}
+      B,E,F,G,H,I,K,L: {E: 1, G: 2, B: 3, F: 4, I: 5, H: 6, L: 7, K: 8}
+      B,E,F,G,H,I,J,L: {E: 1, J: 2, B: 3, F: 4, H: 5, G: 6, L: 7, I: 8}
+      B,E,F,G,H,I,J,K: {E: 1, J: 2, B: 3, F: 4, H: 5, G: 6, I: 7, K: 8}
+      B,D,G,H,I,J,K,L: {H: 1, J: 2, B: 3, D: 4, I: 5, G: 6, L: 7, K: 8}
+      B,D,F,H,I,J,K,L: {H: 1, J: 2, B: 3, D: 4, I: 5, F: 6, L: 7, K: 8}
+      B,D,F,G,I,J,K,L: {I: 1, G: 2, B: 3, D: 4, J: 5, F: 6, L: 7, K: 8}
+      B,D,F,G,H,J,K,L: {H: 1, G: 2, B: 3, D: 4, J: 5, F: 6, L: 7, K: 8}
+      B,D,F,G,H,I,K,L: {H: 1, G: 2, B: 3, D: 4, I: 5, F: 6, L: 7, K: 8}
+      B,D,F,G,H,I,J,L: {H: 1, G: 2, B: 3, D: 4, J: 5, F: 6, L: 7, I: 8}
+      B,D,F,G,H,I,J,K: {H: 1, G: 2, B: 3, D: 4, J: 5, F: 6, I: 7, K: 8}
+      B,D,E,H,I,J,K,L: {E: 1, J: 2, B: 3, D: 4, I: 5, H: 6, L: 7, K: 8}
+      B,D,E,G,I,J,K,L: {E: 1, J: 2, B: 3, D: 4, I: 5, G: 6, L: 7, K: 8}
+      B,D,E,G,H,J,K,L: {E: 1, J: 2, B: 3, D: 4, H: 5, G: 6, L: 7, K: 8}
+      B,D,E,G,H,I,K,L: {E: 1, G: 2, B: 3, D: 4, I: 5, H: 6, L: 7, K: 8}
+      B,D,E,G,H,I,J,L: {E: 1, J: 2, B: 3, D: 4, H: 5, G: 6, L: 7, I: 8}
+      B,D,E,G,H,I,J,K: {E: 1, J: 2, B: 3, D: 4, H: 5, G: 6, I: 7, K: 8}
+      B,D,E,F,I,J,K,L: {E: 1, J: 2, B: 3, D: 4, I: 5, F: 6, L: 7, K: 8}
+      B,D,E,F,H,J,K,L: {E: 1, J: 2, B: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      B,D,E,F,H,I,K,L: {E: 1, I: 2, B: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      B,D,E,F,H,I,J,L: {E: 1, J: 2, B: 3, D: 4, H: 5, F: 6, L: 7, I: 8}
+      B,D,E,F,H,I,J,K: {E: 1, J: 2, B: 3, D: 4, H: 5, F: 6, I: 7, K: 8}
+      B,D,E,F,G,J,K,L: {E: 1, G: 2, B: 3, D: 4, J: 5, F: 6, L: 7, K: 8}
+      B,D,E,F,G,I,K,L: {E: 1, G: 2, B: 3, D: 4, I: 5, F: 6, L: 7, K: 8}
+      B,D,E,F,G,I,J,L: {E: 1, G: 2, B: 3, D: 4, J: 5, F: 6, L: 7, I: 8}
+      B,D,E,F,G,I,J,K: {E: 1, G: 2, B: 3, D: 4, J: 5, F: 6, I: 7, K: 8}
+      B,D,E,F,G,H,K,L: {E: 1, G: 2, B: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      B,D,E,F,G,H,J,L: {H: 1, G: 2, B: 3, D: 4, J: 5, F: 6, L: 7, E: 8}
+      B,D,E,F,G,H,J,K: {H: 1, G: 2, B: 3, D: 4, J: 5, F: 6, E: 7, K: 8}
+      B,D,E,F,G,H,I,L: {E: 1, G: 2, B: 3, D: 4, H: 5, F: 6, L: 7, I: 8}
+      B,D,E,F,G,H,I,K: {E: 1, G: 2, B: 3, D: 4, H: 5, F: 6, I: 7, K: 8}
+      B,D,E,F,G,H,I,J: {H: 1, G: 2, B: 3, D: 4, J: 5, F: 6, E: 7, I: 8}
+      B,C,G,H,I,J,K,L: {H: 1, J: 2, B: 3, C: 4, I: 5, G: 6, L: 7, K: 8}
+      B,C,F,H,I,J,K,L: {H: 1, J: 2, B: 3, C: 4, I: 5, F: 6, L: 7, K: 8}
+      B,C,F,G,I,J,K,L: {I: 1, G: 2, B: 3, C: 4, J: 5, F: 6, L: 7, K: 8}
+      B,C,F,G,H,J,K,L: {H: 1, G: 2, B: 3, C: 4, J: 5, F: 6, L: 7, K: 8}
+      B,C,F,G,H,I,K,L: {H: 1, G: 2, B: 3, C: 4, I: 5, F: 6, L: 7, K: 8}
+      B,C,F,G,H,I,J,L: {H: 1, G: 2, B: 3, C: 4, J: 5, F: 6, L: 7, I: 8}
+      B,C,F,G,H,I,J,K: {H: 1, G: 2, B: 3, C: 4, J: 5, F: 6, I: 7, K: 8}
+      B,C,E,H,I,J,K,L: {E: 1, J: 2, B: 3, C: 4, I: 5, H: 6, L: 7, K: 8}
+      B,C,E,G,I,J,K,L: {E: 1, J: 2, B: 3, C: 4, I: 5, G: 6, L: 7, K: 8}
+      B,C,E,G,H,J,K,L: {E: 1, J: 2, B: 3, C: 4, H: 5, G: 6, L: 7, K: 8}
+      B,C,E,G,H,I,K,L: {E: 1, G: 2, B: 3, C: 4, I: 5, H: 6, L: 7, K: 8}
+      B,C,E,G,H,I,J,L: {E: 1, J: 2, B: 3, C: 4, H: 5, G: 6, L: 7, I: 8}
+      B,C,E,G,H,I,J,K: {E: 1, J: 2, B: 3, C: 4, H: 5, G: 6, I: 7, K: 8}
+      B,C,E,F,I,J,K,L: {E: 1, J: 2, B: 3, C: 4, I: 5, F: 6, L: 7, K: 8}
+      B,C,E,F,H,J,K,L: {E: 1, J: 2, B: 3, C: 4, H: 5, F: 6, L: 7, K: 8}
+      B,C,E,F,H,I,K,L: {E: 1, I: 2, B: 3, C: 4, H: 5, F: 6, L: 7, K: 8}
+      B,C,E,F,H,I,J,L: {E: 1, J: 2, B: 3, C: 4, H: 5, F: 6, L: 7, I: 8}
+      B,C,E,F,H,I,J,K: {E: 1, J: 2, B: 3, C: 4, H: 5, F: 6, I: 7, K: 8}
+      B,C,E,F,G,J,K,L: {E: 1, G: 2, B: 3, C: 4, J: 5, F: 6, L: 7, K: 8}
+      B,C,E,F,G,I,K,L: {E: 1, G: 2, B: 3, C: 4, I: 5, F: 6, L: 7, K: 8}
+      B,C,E,F,G,I,J,L: {E: 1, G: 2, B: 3, C: 4, J: 5, F: 6, L: 7, I: 8}
+      B,C,E,F,G,I,J,K: {E: 1, G: 2, B: 3, C: 4, J: 5, F: 6, I: 7, K: 8}
+      B,C,E,F,G,H,K,L: {E: 1, G: 2, B: 3, C: 4, H: 5, F: 6, L: 7, K: 8}
+      B,C,E,F,G,H,J,L: {H: 1, G: 2, B: 3, C: 4, J: 5, F: 6, L: 7, E: 8}
+      B,C,E,F,G,H,J,K: {H: 1, G: 2, B: 3, C: 4, J: 5, F: 6, E: 7, K: 8}
+      B,C,E,F,G,H,I,L: {E: 1, G: 2, B: 3, C: 4, H: 5, F: 6, L: 7, I: 8}
+      B,C,E,F,G,H,I,K: {E: 1, G: 2, B: 3, C: 4, H: 5, F: 6, I: 7, K: 8}
+      B,C,E,F,G,H,I,J: {H: 1, G: 2, B: 3, C: 4, J: 5, F: 6, E: 7, I: 8}
+      B,C,D,H,I,J,K,L: {H: 1, J: 2, B: 3, C: 4, I: 5, D: 6, L: 7, K: 8}
+      B,C,D,G,I,J,K,L: {I: 1, G: 2, B: 3, C: 4, J: 5, D: 6, L: 7, K: 8}
+      B,C,D,G,H,J,K,L: {H: 1, G: 2, B: 3, C: 4, J: 5, D: 6, L: 7, K: 8}
+      B,C,D,G,H,I,K,L: {H: 1, G: 2, B: 3, C: 4, I: 5, D: 6, L: 7, K: 8}
+      B,C,D,G,H,I,J,L: {H: 1, G: 2, B: 3, C: 4, J: 5, D: 6, L: 7, I: 8}
+      B,C,D,G,H,I,J,K: {H: 1, G: 2, B: 3, C: 4, J: 5, D: 6, I: 7, K: 8}
+      B,C,D,F,I,J,K,L: {C: 1, J: 2, B: 3, D: 4, I: 5, F: 6, L: 7, K: 8}
+      B,C,D,F,H,J,K,L: {C: 1, J: 2, B: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      B,C,D,F,H,I,K,L: {C: 1, I: 2, B: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      B,C,D,F,H,I,J,L: {C: 1, J: 2, B: 3, D: 4, H: 5, F: 6, L: 7, I: 8}
+      B,C,D,F,H,I,J,K: {C: 1, J: 2, B: 3, D: 4, H: 5, F: 6, I: 7, K: 8}
+      B,C,D,F,G,J,K,L: {C: 1, G: 2, B: 3, D: 4, J: 5, F: 6, L: 7, K: 8}
+      B,C,D,F,G,I,K,L: {C: 1, G: 2, B: 3, D: 4, I: 5, F: 6, L: 7, K: 8}
+      B,C,D,F,G,I,J,L: {C: 1, G: 2, B: 3, D: 4, J: 5, F: 6, L: 7, I: 8}
+      B,C,D,F,G,I,J,K: {C: 1, G: 2, B: 3, D: 4, J: 5, F: 6, I: 7, K: 8}
+      B,C,D,F,G,H,K,L: {C: 1, G: 2, B: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      B,C,D,F,G,H,J,L: {C: 1, G: 2, B: 3, D: 4, H: 5, F: 6, L: 7, J: 8}
+      B,C,D,F,G,H,J,K: {H: 1, G: 2, B: 3, C: 4, J: 5, F: 6, D: 7, K: 8}
+      B,C,D,F,G,H,I,L: {C: 1, G: 2, B: 3, D: 4, H: 5, F: 6, L: 7, I: 8}
+      B,C,D,F,G,H,I,K: {C: 1, G: 2, B: 3, D: 4, H: 5, F: 6, I: 7, K: 8}
+      B,C,D,F,G,H,I,J: {H: 1, G: 2, B: 3, C: 4, J: 5, F: 6, D: 7, I: 8}
+      B,C,D,E,I,J,K,L: {E: 1, J: 2, B: 3, C: 4, I: 5, D: 6, L: 7, K: 8}
+      B,C,D,E,H,J,K,L: {E: 1, J: 2, B: 3, C: 4, H: 5, D: 6, L: 7, K: 8}
+      B,C,D,E,H,I,K,L: {E: 1, I: 2, B: 3, C: 4, H: 5, D: 6, L: 7, K: 8}
+      B,C,D,E,H,I,J,L: {E: 1, J: 2, B: 3, C: 4, H: 5, D: 6, L: 7, I: 8}
+      B,C,D,E,H,I,J,K: {E: 1, J: 2, B: 3, C: 4, H: 5, D: 6, I: 7, K: 8}
+      B,C,D,E,G,J,K,L: {E: 1, G: 2, B: 3, C: 4, J: 5, D: 6, L: 7, K: 8}
+      B,C,D,E,G,I,K,L: {E: 1, G: 2, B: 3, C: 4, I: 5, D: 6, L: 7, K: 8}
+      B,C,D,E,G,I,J,L: {E: 1, G: 2, B: 3, C: 4, J: 5, D: 6, L: 7, I: 8}
+      B,C,D,E,G,I,J,K: {E: 1, G: 2, B: 3, C: 4, J: 5, D: 6, I: 7, K: 8}
+      B,C,D,E,G,H,K,L: {E: 1, G: 2, B: 3, C: 4, H: 5, D: 6, L: 7, K: 8}
+      B,C,D,E,G,H,J,L: {H: 1, G: 2, B: 3, C: 4, J: 5, D: 6, L: 7, E: 8}
+      B,C,D,E,G,H,J,K: {H: 1, G: 2, B: 3, C: 4, J: 5, D: 6, E: 7, K: 8}
+      B,C,D,E,G,H,I,L: {E: 1, G: 2, B: 3, C: 4, H: 5, D: 6, L: 7, I: 8}
+      B,C,D,E,G,H,I,K: {E: 1, G: 2, B: 3, C: 4, H: 5, D: 6, I: 7, K: 8}
+      B,C,D,E,G,H,I,J: {H: 1, G: 2, B: 3, C: 4, J: 5, D: 6, E: 7, I: 8}
+      B,C,D,E,F,J,K,L: {C: 1, J: 2, B: 3, D: 4, E: 5, F: 6, L: 7, K: 8}
+      B,C,D,E,F,I,K,L: {C: 1, E: 2, B: 3, D: 4, I: 5, F: 6, L: 7, K: 8}
+      B,C,D,E,F,I,J,L: {C: 1, J: 2, B: 3, D: 4, E: 5, F: 6, L: 7, I: 8}
+      B,C,D,E,F,I,J,K: {C: 1, J: 2, B: 3, D: 4, E: 5, F: 6, I: 7, K: 8}
+      B,C,D,E,F,H,K,L: {C: 1, E: 2, B: 3, D: 4, H: 5, F: 6, L: 7, K: 8}
+      B,C,D,E,F,H,J,L: {C: 1, J: 2, B: 3, D: 4, H: 5, F: 6, L: 7, E: 8}
+      B,C,D,E,F,H,J,K: {C: 1, J: 2, B: 3, D: 4, H: 5, F: 6, E: 7, K: 8}
+      B,C,D,E,F,H,I,L: {C: 1, E: 2, B: 3, D: 4, H: 5, F: 6, L: 7, I: 8}
+      B,C,D,E,F,H,I,K: {C: 1, E: 2, B: 3, D: 4, H: 5, F: 6, I: 7, K: 8}
+      B,C,D,E,F,H,I,J: {C: 1, J: 2, B: 3, D: 4, H: 5, F: 6, E: 7, I: 8}
+      B,C,D,E,F,G,K,L: {C: 1, G: 2, B: 3, D: 4, E: 5, F: 6, L: 7, K: 8}
+      B,C,D,E,F,G,J,L: {C: 1, G: 2, B: 3, D: 4, J: 5, F: 6, L: 7, E: 8}
+      B,C,D,E,F,G,J,K: {C: 1, G: 2, B: 3, D: 4, J: 5, F: 6, E: 7, K: 8}
+      B,C,D,E,F,G,I,L: {C: 1, G: 2, B: 3, D: 4, E: 5, F: 6, L: 7, I: 8}
+      B,C,D,E,F,G,I,K: {C: 1, G: 2, B: 3, D: 4, E: 5, F: 6, I: 7, K: 8}
+      B,C,D,E,F,G,I,J: {C: 1, G: 2, B: 3, D: 4, J: 5, F: 6, E: 7, I: 8}
+      B,C,D,E,F,G,H,L: {C: 1, G: 2, B: 3, D: 4, H: 5, F: 6, L: 7, E: 8}
+      B,C,D,E,F,G,H,K: {C: 1, G: 2, B: 3, D: 4, H: 5, F: 6, E: 7, K: 8}
+      B,C,D,E,F,G,H,J: {H: 1, G: 2, B: 3, C: 4, J: 5, F: 6, D: 7, E: 8}
+      B,C,D,E,F,G,H,I: {C: 1, G: 2, B: 3, D: 4, H: 5, F: 6, E: 7, I: 8}
+      A,F,G,H,I,J,K,L: {H: 1, J: 2, I: 3, F: 4, A: 5, G: 6, L: 7, K: 8}
+      A,E,G,H,I,J,K,L: {E: 1, J: 2, I: 3, A: 4, H: 5, G: 6, L: 7, K: 8}
+      A,E,F,H,I,J,K,L: {E: 1, J: 2, I: 3, F: 4, A: 5, H: 6, L: 7, K: 8}
+      A,E,F,G,I,J,K,L: {E: 1, J: 2, I: 3, F: 4, A: 5, G: 6, L: 7, K: 8}
+      A,E,F,G,H,J,K,L: {E: 1, G: 2, J: 3, F: 4, A: 5, H: 6, L: 7, K: 8}
+      A,E,F,G,H,I,K,L: {E: 1, G: 2, I: 3, F: 4, A: 5, H: 6, L: 7, K: 8}
+      A,E,F,G,H,I,J,L: {E: 1, G: 2, J: 3, F: 4, A: 5, H: 6, L: 7, I: 8}
+      A,E,F,G,H,I,J,K: {E: 1, G: 2, J: 3, F: 4, A: 5, H: 6, I: 7, K: 8}
+      A,D,G,H,I,J,K,L: {H: 1, J: 2, I: 3, D: 4, A: 5, G: 6, L: 7, K: 8}
+      A,D,F,H,I,J,K,L: {H: 1, J: 2, I: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,F,G,I,J,K,L: {I: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,F,G,H,J,K,L: {H: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,F,G,H,I,K,L: {H: 1, G: 2, I: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,F,G,H,I,J,L: {H: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,D,F,G,H,I,J,K: {H: 1, G: 2, J: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,D,E,H,I,J,K,L: {E: 1, J: 2, I: 3, D: 4, A: 5, H: 6, L: 7, K: 8}
+      A,D,E,G,I,J,K,L: {E: 1, J: 2, I: 3, D: 4, A: 5, G: 6, L: 7, K: 8}
+      A,D,E,G,H,J,K,L: {E: 1, G: 2, J: 3, D: 4, A: 5, H: 6, L: 7, K: 8}
+      A,D,E,G,H,I,K,L: {E: 1, G: 2, I: 3, D: 4, A: 5, H: 6, L: 7, K: 8}
+      A,D,E,G,H,I,J,L: {E: 1, G: 2, J: 3, D: 4, A: 5, H: 6, L: 7, I: 8}
+      A,D,E,G,H,I,J,K: {E: 1, G: 2, J: 3, D: 4, A: 5, H: 6, I: 7, K: 8}
+      A,D,E,F,I,J,K,L: {E: 1, J: 2, I: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,E,F,H,J,K,L: {H: 1, J: 2, E: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,E,F,H,I,K,L: {H: 1, E: 2, I: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,E,F,H,I,J,L: {H: 1, J: 2, E: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,D,E,F,H,I,J,K: {H: 1, J: 2, E: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,D,E,F,G,J,K,L: {E: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,E,F,G,I,K,L: {E: 1, G: 2, I: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,E,F,G,I,J,L: {E: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,D,E,F,G,I,J,K: {E: 1, G: 2, J: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,D,E,F,G,H,K,L: {H: 1, G: 2, E: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,D,E,F,G,H,J,L: {H: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, E: 8}
+      A,D,E,F,G,H,J,K: {H: 1, G: 2, J: 3, D: 4, A: 5, F: 6, E: 7, K: 8}
+      A,D,E,F,G,H,I,L: {H: 1, G: 2, E: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,D,E,F,G,H,I,K: {H: 1, G: 2, E: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,D,E,F,G,H,I,J: {H: 1, G: 2, J: 3, D: 4, A: 5, F: 6, E: 7, I: 8}
+      A,C,G,H,I,J,K,L: {H: 1, J: 2, I: 3, C: 4, A: 5, G: 6, L: 7, K: 8}
+      A,C,F,H,I,J,K,L: {H: 1, J: 2, I: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,F,G,I,J,K,L: {I: 1, G: 2, J: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,F,G,H,J,K,L: {H: 1, G: 2, J: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,F,G,H,I,K,L: {H: 1, G: 2, I: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,F,G,H,I,J,L: {H: 1, G: 2, J: 3, C: 4, A: 5, F: 6, L: 7, I: 8}
+      A,C,F,G,H,I,J,K: {H: 1, G: 2, J: 3, C: 4, A: 5, F: 6, I: 7, K: 8}
+      A,C,E,H,I,J,K,L: {E: 1, J: 2, I: 3, C: 4, A: 5, H: 6, L: 7, K: 8}
+      A,C,E,G,I,J,K,L: {E: 1, J: 2, I: 3, C: 4, A: 5, G: 6, L: 7, K: 8}
+      A,C,E,G,H,J,K,L: {E: 1, G: 2, J: 3, C: 4, A: 5, H: 6, L: 7, K: 8}
+      A,C,E,G,H,I,K,L: {E: 1, G: 2, I: 3, C: 4, A: 5, H: 6, L: 7, K: 8}
+      A,C,E,G,H,I,J,L: {E: 1, G: 2, J: 3, C: 4, A: 5, H: 6, L: 7, I: 8}
+      A,C,E,G,H,I,J,K: {E: 1, G: 2, J: 3, C: 4, A: 5, H: 6, I: 7, K: 8}
+      A,C,E,F,I,J,K,L: {E: 1, J: 2, I: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,E,F,H,J,K,L: {H: 1, J: 2, E: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,E,F,H,I,K,L: {H: 1, E: 2, I: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,E,F,H,I,J,L: {H: 1, J: 2, E: 3, C: 4, A: 5, F: 6, L: 7, I: 8}
+      A,C,E,F,H,I,J,K: {H: 1, J: 2, E: 3, C: 4, A: 5, F: 6, I: 7, K: 8}
+      A,C,E,F,G,J,K,L: {E: 1, G: 2, J: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,E,F,G,I,K,L: {E: 1, G: 2, I: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,E,F,G,I,J,L: {E: 1, G: 2, J: 3, C: 4, A: 5, F: 6, L: 7, I: 8}
+      A,C,E,F,G,I,J,K: {E: 1, G: 2, J: 3, C: 4, A: 5, F: 6, I: 7, K: 8}
+      A,C,E,F,G,H,K,L: {H: 1, G: 2, E: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,E,F,G,H,J,L: {H: 1, G: 2, J: 3, C: 4, A: 5, F: 6, L: 7, E: 8}
+      A,C,E,F,G,H,J,K: {H: 1, G: 2, J: 3, C: 4, A: 5, F: 6, E: 7, K: 8}
+      A,C,E,F,G,H,I,L: {H: 1, G: 2, E: 3, C: 4, A: 5, F: 6, L: 7, I: 8}
+      A,C,E,F,G,H,I,K: {H: 1, G: 2, E: 3, C: 4, A: 5, F: 6, I: 7, K: 8}
+      A,C,E,F,G,H,I,J: {H: 1, G: 2, J: 3, C: 4, A: 5, F: 6, E: 7, I: 8}
+      A,C,D,H,I,J,K,L: {H: 1, J: 2, I: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,G,I,J,K,L: {I: 1, G: 2, J: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,G,H,J,K,L: {H: 1, G: 2, J: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,G,H,I,K,L: {H: 1, G: 2, I: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,G,H,I,J,L: {H: 1, G: 2, J: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,C,D,G,H,I,J,K: {H: 1, G: 2, J: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,C,D,F,I,J,K,L: {C: 1, J: 2, I: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,D,F,H,J,K,L: {H: 1, J: 2, F: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,F,H,I,K,L: {H: 1, F: 2, I: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,F,H,I,J,L: {H: 1, J: 2, F: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,C,D,F,H,I,J,K: {H: 1, J: 2, F: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,C,D,F,G,J,K,L: {C: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,D,F,G,I,K,L: {C: 1, G: 2, I: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,D,F,G,I,J,L: {C: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,C,D,F,G,I,J,K: {C: 1, G: 2, J: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,C,D,F,G,H,K,L: {H: 1, G: 2, F: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,F,G,H,J,L: {C: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, H: 8}
+      A,C,D,F,G,H,J,K: {H: 1, G: 2, J: 3, C: 4, A: 5, F: 6, D: 7, K: 8}
+      A,C,D,F,G,H,I,L: {H: 1, G: 2, F: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,C,D,F,G,H,I,K: {H: 1, G: 2, F: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,C,D,F,G,H,I,J: {H: 1, G: 2, J: 3, C: 4, A: 5, F: 6, D: 7, I: 8}
+      A,C,D,E,I,J,K,L: {E: 1, J: 2, I: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,E,H,J,K,L: {H: 1, J: 2, E: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,E,H,I,K,L: {H: 1, E: 2, I: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,E,H,I,J,L: {H: 1, J: 2, E: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,C,D,E,H,I,J,K: {H: 1, J: 2, E: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,C,D,E,G,J,K,L: {E: 1, G: 2, J: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,E,G,I,K,L: {E: 1, G: 2, I: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,E,G,I,J,L: {E: 1, G: 2, J: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,C,D,E,G,I,J,K: {E: 1, G: 2, J: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,C,D,E,G,H,K,L: {H: 1, G: 2, E: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,E,G,H,J,L: {H: 1, G: 2, J: 3, C: 4, A: 5, D: 6, L: 7, E: 8}
+      A,C,D,E,G,H,J,K: {H: 1, G: 2, J: 3, C: 4, A: 5, D: 6, E: 7, K: 8}
+      A,C,D,E,G,H,I,L: {H: 1, G: 2, E: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,C,D,E,G,H,I,K: {H: 1, G: 2, E: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,C,D,E,G,H,I,J: {H: 1, G: 2, J: 3, C: 4, A: 5, D: 6, E: 7, I: 8}
+      A,C,D,E,F,J,K,L: {C: 1, J: 2, E: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,D,E,F,I,K,L: {C: 1, E: 2, I: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,D,E,F,I,J,L: {C: 1, J: 2, E: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,C,D,E,F,I,J,K: {C: 1, J: 2, E: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,C,D,E,F,H,K,L: {H: 1, E: 2, F: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,C,D,E,F,H,J,L: {H: 1, J: 2, F: 3, C: 4, A: 5, D: 6, L: 7, E: 8}
+      A,C,D,E,F,H,J,K: {H: 1, J: 2, E: 3, C: 4, A: 5, F: 6, D: 7, K: 8}
+      A,C,D,E,F,H,I,L: {H: 1, E: 2, F: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,C,D,E,F,H,I,K: {H: 1, E: 2, F: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,C,D,E,F,H,I,J: {H: 1, J: 2, E: 3, C: 4, A: 5, F: 6, D: 7, I: 8}
+      A,C,D,E,F,G,K,L: {C: 1, G: 2, E: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,C,D,E,F,G,J,L: {C: 1, G: 2, J: 3, D: 4, A: 5, F: 6, L: 7, E: 8}
+      A,C,D,E,F,G,J,K: {C: 1, G: 2, J: 3, D: 4, A: 5, F: 6, E: 7, K: 8}
+      A,C,D,E,F,G,I,L: {C: 1, G: 2, E: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,C,D,E,F,G,I,K: {C: 1, G: 2, E: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,C,D,E,F,G,I,J: {C: 1, G: 2, J: 3, D: 4, A: 5, F: 6, E: 7, I: 8}
+      A,C,D,E,F,G,H,L: {H: 1, G: 2, F: 3, C: 4, A: 5, D: 6, L: 7, E: 8}
+      A,C,D,E,F,G,H,K: {H: 1, G: 2, E: 3, C: 4, A: 5, F: 6, D: 7, K: 8}
+      A,C,D,E,F,G,H,J: {H: 1, G: 2, J: 3, C: 4, A: 5, F: 6, D: 7, E: 8}
+      A,C,D,E,F,G,H,I: {H: 1, G: 2, E: 3, C: 4, A: 5, F: 6, D: 7, I: 8}
+      A,B,G,H,I,J,K,L: {H: 1, J: 2, B: 3, A: 4, I: 5, G: 6, L: 7, K: 8}
+      A,B,F,H,I,J,K,L: {H: 1, J: 2, B: 3, A: 4, I: 5, F: 6, L: 7, K: 8}
+      A,B,F,G,I,J,K,L: {I: 1, J: 2, B: 3, F: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,F,G,H,J,K,L: {H: 1, J: 2, B: 3, F: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,F,G,H,I,K,L: {H: 1, G: 2, B: 3, A: 4, I: 5, F: 6, L: 7, K: 8}
+      A,B,F,G,H,I,J,L: {H: 1, J: 2, B: 3, F: 4, A: 5, G: 6, L: 7, I: 8}
+      A,B,F,G,H,I,J,K: {H: 1, J: 2, B: 3, F: 4, A: 5, G: 6, I: 7, K: 8}
+      A,B,E,H,I,J,K,L: {E: 1, J: 2, B: 3, A: 4, I: 5, H: 6, L: 7, K: 8}
+      A,B,E,G,I,J,K,L: {E: 1, J: 2, B: 3, A: 4, I: 5, G: 6, L: 7, K: 8}
+      A,B,E,G,H,J,K,L: {E: 1, J: 2, B: 3, A: 4, H: 5, G: 6, L: 7, K: 8}
+      A,B,E,G,H,I,K,L: {E: 1, G: 2, B: 3, A: 4, I: 5, H: 6, L: 7, K: 8}
+      A,B,E,G,H,I,J,L: {E: 1, J: 2, B: 3, A: 4, H: 5, G: 6, L: 7, I: 8}
+      A,B,E,G,H,I,J,K: {E: 1, J: 2, B: 3, A: 4, H: 5, G: 6, I: 7, K: 8}
+      A,B,E,F,I,J,K,L: {E: 1, J: 2, B: 3, A: 4, I: 5, F: 6, L: 7, K: 8}
+      A,B,E,F,H,J,K,L: {E: 1, J: 2, B: 3, F: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,E,F,H,I,K,L: {E: 1, I: 2, B: 3, F: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,E,F,H,I,J,L: {E: 1, J: 2, B: 3, F: 4, A: 5, H: 6, L: 7, I: 8}
+      A,B,E,F,H,I,J,K: {E: 1, J: 2, B: 3, F: 4, A: 5, H: 6, I: 7, K: 8}
+      A,B,E,F,G,J,K,L: {E: 1, J: 2, B: 3, F: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,E,F,G,I,K,L: {E: 1, G: 2, B: 3, A: 4, I: 5, F: 6, L: 7, K: 8}
+      A,B,E,F,G,I,J,L: {E: 1, J: 2, B: 3, F: 4, A: 5, G: 6, L: 7, I: 8}
+      A,B,E,F,G,I,J,K: {E: 1, J: 2, B: 3, F: 4, A: 5, G: 6, I: 7, K: 8}
+      A,B,E,F,G,H,K,L: {E: 1, G: 2, B: 3, F: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,E,F,G,H,J,L: {H: 1, J: 2, B: 3, F: 4, A: 5, G: 6, L: 7, E: 8}
+      A,B,E,F,G,H,J,K: {H: 1, J: 2, B: 3, F: 4, A: 5, G: 6, E: 7, K: 8}
+      A,B,E,F,G,H,I,L: {E: 1, G: 2, B: 3, F: 4, A: 5, H: 6, L: 7, I: 8}
+      A,B,E,F,G,H,I,K: {E: 1, G: 2, B: 3, F: 4, A: 5, H: 6, I: 7, K: 8}
+      A,B,E,F,G,H,I,J: {H: 1, J: 2, B: 3, F: 4, A: 5, G: 6, E: 7, I: 8}
+      A,B,D,H,I,J,K,L: {I: 1, J: 2, B: 3, D: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,D,G,I,J,K,L: {I: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,D,G,H,J,K,L: {H: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,D,G,H,I,K,L: {I: 1, G: 2, B: 3, D: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,D,G,H,I,J,L: {H: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, I: 8}
+      A,B,D,G,H,I,J,K: {H: 1, J: 2, B: 3, D: 4, A: 5, G: 6, I: 7, K: 8}
+      A,B,D,F,I,J,K,L: {I: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,D,F,H,J,K,L: {H: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,D,F,H,I,K,L: {H: 1, I: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,D,F,H,I,J,L: {H: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,D,F,H,I,J,K: {H: 1, J: 2, B: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,D,F,G,J,K,L: {F: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,D,F,G,I,K,L: {I: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,D,F,G,I,J,L: {F: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, I: 8}
+      A,B,D,F,G,I,J,K: {F: 1, J: 2, B: 3, D: 4, A: 5, G: 6, I: 7, K: 8}
+      A,B,D,F,G,H,K,L: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,D,F,G,H,J,L: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, J: 8}
+      A,B,D,F,G,H,J,K: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, J: 7, K: 8}
+      A,B,D,F,G,H,I,L: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,D,F,G,H,I,K: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,D,F,G,H,I,J: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, I: 7, J: 8}
+      A,B,D,E,I,J,K,L: {E: 1, J: 2, B: 3, A: 4, I: 5, D: 6, L: 7, K: 8}
+      A,B,D,E,H,J,K,L: {E: 1, J: 2, B: 3, D: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,D,E,H,I,K,L: {E: 1, I: 2, B: 3, D: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,D,E,H,I,J,L: {E: 1, J: 2, B: 3, D: 4, A: 5, H: 6, L: 7, I: 8}
+      A,B,D,E,H,I,J,K: {E: 1, J: 2, B: 3, D: 4, A: 5, H: 6, I: 7, K: 8}
+      A,B,D,E,G,J,K,L: {E: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,D,E,G,I,K,L: {E: 1, G: 2, B: 3, A: 4, I: 5, D: 6, L: 7, K: 8}
+      A,B,D,E,G,I,J,L: {E: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, I: 8}
+      A,B,D,E,G,I,J,K: {E: 1, J: 2, B: 3, D: 4, A: 5, G: 6, I: 7, K: 8}
+      A,B,D,E,G,H,K,L: {E: 1, G: 2, B: 3, D: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,D,E,G,H,J,L: {H: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, E: 8}
+      A,B,D,E,G,H,J,K: {H: 1, J: 2, B: 3, D: 4, A: 5, G: 6, E: 7, K: 8}
+      A,B,D,E,G,H,I,L: {E: 1, G: 2, B: 3, D: 4, A: 5, H: 6, L: 7, I: 8}
+      A,B,D,E,G,H,I,K: {E: 1, G: 2, B: 3, D: 4, A: 5, H: 6, I: 7, K: 8}
+      A,B,D,E,G,H,I,J: {H: 1, J: 2, B: 3, D: 4, A: 5, G: 6, E: 7, I: 8}
+      A,B,D,E,F,J,K,L: {E: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,D,E,F,I,K,L: {E: 1, I: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,D,E,F,I,J,L: {E: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,D,E,F,I,J,K: {E: 1, J: 2, B: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,D,E,F,H,K,L: {H: 1, E: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,D,E,F,H,J,L: {H: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, E: 8}
+      A,B,D,E,F,H,J,K: {H: 1, J: 2, B: 3, D: 4, A: 5, F: 6, E: 7, K: 8}
+      A,B,D,E,F,H,I,L: {H: 1, E: 2, B: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,D,E,F,H,I,K: {H: 1, E: 2, B: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,D,E,F,H,I,J: {H: 1, J: 2, B: 3, D: 4, A: 5, F: 6, E: 7, I: 8}
+      A,B,D,E,F,G,K,L: {E: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,D,E,F,G,J,L: {E: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, J: 8}
+      A,B,D,E,F,G,J,K: {E: 1, G: 2, B: 3, D: 4, A: 5, F: 6, J: 7, K: 8}
+      A,B,D,E,F,G,I,L: {E: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,D,E,F,G,I,K: {E: 1, G: 2, B: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,D,E,F,G,I,J: {E: 1, G: 2, B: 3, D: 4, A: 5, F: 6, I: 7, J: 8}
+      A,B,D,E,F,G,H,L: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, E: 8}
+      A,B,D,E,F,G,H,K: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, E: 7, K: 8}
+      A,B,D,E,F,G,H,J: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, E: 7, J: 8}
+      A,B,D,E,F,G,H,I: {H: 1, G: 2, B: 3, D: 4, A: 5, F: 6, E: 7, I: 8}
+      A,B,C,H,I,J,K,L: {I: 1, J: 2, B: 3, C: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,C,G,I,J,K,L: {I: 1, J: 2, B: 3, C: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,C,G,H,J,K,L: {H: 1, J: 2, B: 3, C: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,C,G,H,I,K,L: {I: 1, G: 2, B: 3, C: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,C,G,H,I,J,L: {H: 1, J: 2, B: 3, C: 4, A: 5, G: 6, L: 7, I: 8}
+      A,B,C,G,H,I,J,K: {H: 1, J: 2, B: 3, C: 4, A: 5, G: 6, I: 7, K: 8}
+      A,B,C,F,I,J,K,L: {I: 1, J: 2, B: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,F,H,J,K,L: {H: 1, J: 2, B: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,F,H,I,K,L: {H: 1, I: 2, B: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,F,H,I,J,L: {H: 1, J: 2, B: 3, C: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,C,F,H,I,J,K: {H: 1, J: 2, B: 3, C: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,C,F,G,J,K,L: {C: 1, J: 2, B: 3, F: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,C,F,G,I,K,L: {I: 1, G: 2, B: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,F,G,I,J,L: {C: 1, J: 2, B: 3, F: 4, A: 5, G: 6, L: 7, I: 8}
+      A,B,C,F,G,I,J,K: {C: 1, J: 2, B: 3, F: 4, A: 5, G: 6, I: 7, K: 8}
+      A,B,C,F,G,H,K,L: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,F,G,H,J,L: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, L: 7, J: 8}
+      A,B,C,F,G,H,J,K: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, J: 7, K: 8}
+      A,B,C,F,G,H,I,L: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,C,F,G,H,I,K: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,C,F,G,H,I,J: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, I: 7, J: 8}
+      A,B,C,E,I,J,K,L: {E: 1, J: 2, B: 3, A: 4, I: 5, C: 6, L: 7, K: 8}
+      A,B,C,E,H,J,K,L: {E: 1, J: 2, B: 3, C: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,C,E,H,I,K,L: {E: 1, I: 2, B: 3, C: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,C,E,H,I,J,L: {E: 1, J: 2, B: 3, C: 4, A: 5, H: 6, L: 7, I: 8}
+      A,B,C,E,H,I,J,K: {E: 1, J: 2, B: 3, C: 4, A: 5, H: 6, I: 7, K: 8}
+      A,B,C,E,G,J,K,L: {E: 1, J: 2, B: 3, C: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,C,E,G,I,K,L: {E: 1, G: 2, B: 3, A: 4, I: 5, C: 6, L: 7, K: 8}
+      A,B,C,E,G,I,J,L: {E: 1, J: 2, B: 3, C: 4, A: 5, G: 6, L: 7, I: 8}
+      A,B,C,E,G,I,J,K: {E: 1, J: 2, B: 3, C: 4, A: 5, G: 6, I: 7, K: 8}
+      A,B,C,E,G,H,K,L: {E: 1, G: 2, B: 3, C: 4, A: 5, H: 6, L: 7, K: 8}
+      A,B,C,E,G,H,J,L: {H: 1, J: 2, B: 3, C: 4, A: 5, G: 6, L: 7, E: 8}
+      A,B,C,E,G,H,J,K: {H: 1, J: 2, B: 3, C: 4, A: 5, G: 6, E: 7, K: 8}
+      A,B,C,E,G,H,I,L: {E: 1, G: 2, B: 3, C: 4, A: 5, H: 6, L: 7, I: 8}
+      A,B,C,E,G,H,I,K: {E: 1, G: 2, B: 3, C: 4, A: 5, H: 6, I: 7, K: 8}
+      A,B,C,E,G,H,I,J: {H: 1, J: 2, B: 3, C: 4, A: 5, G: 6, E: 7, I: 8}
+      A,B,C,E,F,J,K,L: {E: 1, J: 2, B: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,E,F,I,K,L: {E: 1, I: 2, B: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,E,F,I,J,L: {E: 1, J: 2, B: 3, C: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,C,E,F,I,J,K: {E: 1, J: 2, B: 3, C: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,C,E,F,H,K,L: {H: 1, E: 2, B: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,E,F,H,J,L: {H: 1, J: 2, B: 3, C: 4, A: 5, F: 6, L: 7, E: 8}
+      A,B,C,E,F,H,J,K: {H: 1, J: 2, B: 3, C: 4, A: 5, F: 6, E: 7, K: 8}
+      A,B,C,E,F,H,I,L: {H: 1, E: 2, B: 3, C: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,C,E,F,H,I,K: {H: 1, E: 2, B: 3, C: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,C,E,F,H,I,J: {H: 1, J: 2, B: 3, C: 4, A: 5, F: 6, E: 7, I: 8}
+      A,B,C,E,F,G,K,L: {E: 1, G: 2, B: 3, C: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,E,F,G,J,L: {E: 1, G: 2, B: 3, C: 4, A: 5, F: 6, L: 7, J: 8}
+      A,B,C,E,F,G,J,K: {E: 1, G: 2, B: 3, C: 4, A: 5, F: 6, J: 7, K: 8}
+      A,B,C,E,F,G,I,L: {E: 1, G: 2, B: 3, C: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,C,E,F,G,I,K: {E: 1, G: 2, B: 3, C: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,C,E,F,G,I,J: {E: 1, G: 2, B: 3, C: 4, A: 5, F: 6, I: 7, J: 8}
+      A,B,C,E,F,G,H,L: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, L: 7, E: 8}
+      A,B,C,E,F,G,H,K: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, E: 7, K: 8}
+      A,B,C,E,F,G,H,J: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, E: 7, J: 8}
+      A,B,C,E,F,G,H,I: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, E: 7, I: 8}
+      A,B,C,D,I,J,K,L: {I: 1, J: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,H,J,K,L: {H: 1, J: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,H,I,K,L: {H: 1, I: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,H,I,J,L: {H: 1, J: 2, B: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,B,C,D,H,I,J,K: {H: 1, J: 2, B: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,B,C,D,G,J,K,L: {C: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, K: 8}
+      A,B,C,D,G,I,K,L: {I: 1, G: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,G,I,J,L: {C: 1, J: 2, B: 3, D: 4, A: 5, G: 6, L: 7, I: 8}
+      A,B,C,D,G,I,J,K: {C: 1, J: 2, B: 3, D: 4, A: 5, G: 6, I: 7, K: 8}
+      A,B,C,D,G,H,K,L: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,G,H,J,L: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, L: 7, J: 8}
+      A,B,C,D,G,H,J,K: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, J: 7, K: 8}
+      A,B,C,D,G,H,I,L: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,B,C,D,G,H,I,K: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,B,C,D,G,H,I,J: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, I: 7, J: 8}
+      A,B,C,D,F,J,K,L: {C: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,D,F,I,K,L: {C: 1, I: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,D,F,I,J,L: {C: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,C,D,F,I,J,K: {C: 1, J: 2, B: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,C,D,F,H,K,L: {H: 1, F: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,F,H,J,L: {C: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, H: 8}
+      A,B,C,D,F,H,J,K: {H: 1, J: 2, B: 3, C: 4, A: 5, F: 6, D: 7, K: 8}
+      A,B,C,D,F,H,I,L: {H: 1, F: 2, B: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,B,C,D,F,H,I,K: {H: 1, F: 2, B: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,B,C,D,F,H,I,J: {H: 1, J: 2, B: 3, C: 4, A: 5, F: 6, D: 7, I: 8}
+      A,B,C,D,F,G,K,L: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,D,F,G,J,L: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, J: 8}
+      A,B,C,D,F,G,J,K: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, J: 7, K: 8}
+      A,B,C,D,F,G,I,L: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,C,D,F,G,I,K: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,C,D,F,G,I,J: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, I: 7, J: 8}
+      A,B,C,D,F,G,H,L: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, H: 8}
+      A,B,C,D,F,G,H,K: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, D: 7, K: 8}
+      A,B,C,D,F,G,H,J: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, D: 7, J: 8}
+      A,B,C,D,F,G,H,I: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, D: 7, I: 8}
+      A,B,C,D,E,J,K,L: {E: 1, J: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,E,I,K,L: {E: 1, I: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,E,I,J,L: {E: 1, J: 2, B: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,B,C,D,E,I,J,K: {E: 1, J: 2, B: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,B,C,D,E,H,K,L: {H: 1, E: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,E,H,J,L: {H: 1, J: 2, B: 3, C: 4, A: 5, D: 6, L: 7, E: 8}
+      A,B,C,D,E,H,J,K: {H: 1, J: 2, B: 3, C: 4, A: 5, D: 6, E: 7, K: 8}
+      A,B,C,D,E,H,I,L: {H: 1, E: 2, B: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,B,C,D,E,H,I,K: {H: 1, E: 2, B: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,B,C,D,E,H,I,J: {H: 1, J: 2, B: 3, C: 4, A: 5, D: 6, E: 7, I: 8}
+      A,B,C,D,E,G,K,L: {E: 1, G: 2, B: 3, C: 4, A: 5, D: 6, L: 7, K: 8}
+      A,B,C,D,E,G,J,L: {E: 1, G: 2, B: 3, C: 4, A: 5, D: 6, L: 7, J: 8}
+      A,B,C,D,E,G,J,K: {E: 1, G: 2, B: 3, C: 4, A: 5, D: 6, J: 7, K: 8}
+      A,B,C,D,E,G,I,L: {E: 1, G: 2, B: 3, C: 4, A: 5, D: 6, L: 7, I: 8}
+      A,B,C,D,E,G,I,K: {E: 1, G: 2, B: 3, C: 4, A: 5, D: 6, I: 7, K: 8}
+      A,B,C,D,E,G,I,J: {E: 1, G: 2, B: 3, C: 4, A: 5, D: 6, I: 7, J: 8}
+      A,B,C,D,E,G,H,L: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, L: 7, E: 8}
+      A,B,C,D,E,G,H,K: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, E: 7, K: 8}
+      A,B,C,D,E,G,H,J: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, E: 7, J: 8}
+      A,B,C,D,E,G,H,I: {H: 1, G: 2, B: 3, C: 4, A: 5, D: 6, E: 7, I: 8}
+      A,B,C,D,E,F,K,L: {C: 1, E: 2, B: 3, D: 4, A: 5, F: 6, L: 7, K: 8}
+      A,B,C,D,E,F,J,L: {C: 1, J: 2, B: 3, D: 4, A: 5, F: 6, L: 7, E: 8}
+      A,B,C,D,E,F,J,K: {C: 1, J: 2, B: 3, D: 4, A: 5, F: 6, E: 7, K: 8}
+      A,B,C,D,E,F,I,L: {C: 1, E: 2, B: 3, D: 4, A: 5, F: 6, L: 7, I: 8}
+      A,B,C,D,E,F,I,K: {C: 1, E: 2, B: 3, D: 4, A: 5, F: 6, I: 7, K: 8}
+      A,B,C,D,E,F,I,J: {C: 1, J: 2, B: 3, D: 4, A: 5, F: 6, E: 7, I: 8}
+      A,B,C,D,E,F,H,L: {H: 1, F: 2, B: 3, C: 4, A: 5, D: 6, L: 7, E: 8}
+      A,B,C,D,E,F,H,K: {H: 1, E: 2, B: 3, C: 4, A: 5, F: 6, D: 7, K: 8}
+      A,B,C,D,E,F,H,J: {H: 1, J: 2, B: 3, C: 4, A: 5, F: 6, D: 7, E: 8}
+      A,B,C,D,E,F,H,I: {H: 1, E: 2, B: 3, C: 4, A: 5, F: 6, D: 7, I: 8}
+      A,B,C,D,E,F,G,L: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, L: 7, E: 8}
+      A,B,C,D,E,F,G,K: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, E: 7, K: 8}
+      A,B,C,D,E,F,G,J: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, E: 7, J: 8}
+      A,B,C,D,E,F,G,I: {C: 1, G: 2, B: 3, D: 4, A: 5, F: 6, E: 7, I: 8}
+      A,B,C,D,E,F,G,H: {H: 1, G: 2, B: 3, C: 4, A: 5, F: 6, D: 7, E: 8}
+  euro16:
+    format_version: euro16-2008-v1
+    tiebreak: euro
+    third_place_advance: 0
+    knockout_seeds:
+    - [1A, 2B]
+    - [1B, 2A]
+    - [1C, 2D]
+    - [1D, 2C]
+  euro24:
+    format_version: euro24-v1
+    tiebreak: euro
+    third_place_advance: 4
+    knockout_seeds:
+    - [1B, 3-1]
+    - [1A, 2C]
+    - [1F, 3-4]
+    - [2D, 2E]
+    - [1E, 3-3]
+    - [1D, 2F]
+    - [1C, 3-2]
+    - [2A, 2B]
+    third_place_table:
+      A,B,C,D: {A: 1, D: 2, B: 3, C: 4}
+      A,B,C,E: {A: 1, E: 2, B: 3, C: 4}
+      A,B,C,F: {A: 1, F: 2, B: 3, C: 4}
+      A,B,D,E: {D: 1, E: 2, A: 3, B: 4}
+      A,B,D,F: {D: 1, F: 2, A: 3, B: 4}
+      A,B,E,F: {E: 1, F: 2, B: 3, A: 4}
+      A,C,D,E: {E: 1, D: 2, C: 3, A: 4}
+      A,C,D,F: {F: 1, D: 2, C: 3, A: 4}
+      A,C,E,F: {E: 1, F: 2, C: 3, A: 4}
+      A,D,E,F: {E: 1, F: 2, D: 3, A: 4}
+      B,C,D,E: {E: 1, D: 2, B: 3, C: 4}
+      B,C,D,F: {F: 1, D: 2, C: 3, B: 4}
+      B,C,E,F: {F: 1, E: 2, C: 3, B: 4}
+      B,D,E,F: {F: 1, E: 2, D: 3, B: 4}
+      C,D,E,F: {F: 1, E: 2, D: 3, C: 4}
+editions:
+- id: wc2006
+  kind: WC
+  year: 2006
+  shape: wc32
+  hosts: [germany]
+  venue: germany  # single host: every match, group and knockout, was in Germany
+  groups:
+    A: [germany, ecuador, poland, costa_rica]
+    B: [england, sweden, paraguay, trinidad_and_tobago]
+    C: [argentina, netherlands, ivory_coast, serbia]
+    D: [portugal, mexico, angola, iran]
+    E: [italy, ghana, czech_republic, united_states]
+    F: [brazil, australia, croatia, japan]
+    G: [switzerland, france, south_korea, togo]
+    H: [spain, ukraine, tunisia, saudi_arabia]
+- id: wc2010
+  kind: WC
+  year: 2010
+  shape: wc32
+  hosts: [south_africa]
+  venue: south_africa  # single host: every match, group and knockout, was in South Africa
+  groups:
+    A: [uruguay, mexico, south_africa, france]
+    B: [argentina, south_korea, greece, nigeria]
+    C: [united_states, england, slovenia, algeria]
+    D: [germany, ghana, australia, serbia]
+    E: [netherlands, japan, denmark, cameroon]
+    F: [paraguay, slovakia, new_zealand, italy]
+    G: [brazil, portugal, ivory_coast, north_korea]
+    H: [spain, chile, switzerland, honduras]
+- id: wc2014
+  kind: WC
+  year: 2014
+  shape: wc32
+  hosts: [brazil]
+  venue: brazil  # single host: every match, group and knockout, was in Brazil
+  groups:
+    A: [brazil, mexico, croatia, cameroon]
+    B: [netherlands, chile, spain, australia]
+    C: [colombia, greece, ivory_coast, japan]
+    D: [costa_rica, uruguay, italy, england]
+    E: [france, switzerland, ecuador, honduras]
+    F: [argentina, nigeria, bosnia_and_herzegovina, iran]
+    G: [germany, united_states, portugal, ghana]
+    H: [belgium, algeria, russia, south_korea]
+- id: wc2018
+  kind: WC
+  year: 2018
+  shape: wc32
+  hosts: [russia]
+  venue: russia  # single host: every match, group and knockout, was in Russia
+  groups:
+    A: [uruguay, russia, saudi_arabia, egypt]
+    B: [spain, portugal, iran, morocco]
+    C: [france, denmark, peru, australia]
+    D: [croatia, argentina, nigeria, iceland]
+    E: [brazil, switzerland, serbia, costa_rica]
+    F: [sweden, mexico, south_korea, germany]
+    G: [belgium, england, tunisia, panama]
+    H: [colombia, japan, senegal, poland]
+- id: wc2022
+  kind: WC
+  year: 2022
+  shape: wc32
+  hosts: [qatar]
+  venue: qatar  # single host: every match, group and knockout, was in Qatar
+  groups:
+    A: [netherlands, senegal, ecuador, qatar]
+    B: [england, united_states, iran, wales]
+    C: [argentina, poland, mexico, saudi_arabia]
+    D: [france, australia, tunisia, denmark]
+    E: [japan, spain, germany, costa_rica]
+    F: [morocco, croatia, belgium, canada]
+    G: [brazil, switzerland, cameroon, serbia]
+    H: [portugal, south_korea, uruguay, ghana]
+- id: wc2026
+  kind: WC
+  year: 2026
+  shape: wc48
+  hosts: [united_states, canada, mexico]
+  # Real draw (5 December 2025) and match-by-match host country, docs/data-sources.md,
+  # WC 2026 draw and venues. Group letter order here fixes the combinations() order used
+  # by venues.groups below; it carries no other meaning (docs/tournament-spec.md: home
+  # advantage only by real venue, not by this order).
+  groups:
+    A: [mexico, south_africa, south_korea, czech_republic]
+    B: [canada, bosnia_and_herzegovina, qatar, switzerland]
+    C: [brazil, morocco, haiti, scotland]
+    D: [united_states, paraguay, australia, turkey]
+    E: [germany, curacao, ivory_coast, ecuador]
+    F: [netherlands, japan, sweden, tunisia]
+    G: [belgium, egypt, iran, new_zealand]
+    H: [spain, cape_verde, saudi_arabia, uruguay]
+    I: [france, senegal, iraq, norway]
+    J: [argentina, algeria, austria, jordan]
+    K: [portugal, colombia, dr_congo, uzbekistan]
+    L: [england, croatia, ghana, panama]
+  venues:
+    groups:
+      A: [mexico, mexico, mexico, mexico, united_states, mexico]
+      B: [canada, canada, canada, united_states, united_states, united_states]
+      C: [united_states, united_states, united_states, united_states, united_states, united_states]
+      D: [united_states, united_states, united_states, united_states, united_states, canada]
+      E: [united_states, canada, united_states, united_states, united_states, united_states]
+      F: [united_states, united_states, united_states, united_states, mexico, mexico]
+      G: [united_states, united_states, canada, united_states, canada, united_states]
+      H: [united_states, united_states, mexico, united_states, united_states, united_states]
+      I: [united_states, united_states, united_states, canada, united_states, united_states]
+      J: [united_states, united_states, united_states, united_states, united_states, united_states]
+      K: [united_states, united_states, united_states, mexico, mexico, united_states]
+      L: [united_states, united_states, united_states, united_states, canada, canada]
+    knockout:
+      round_of_32: [united_states, united_states, united_states, mexico, canada, united_states,
+        united_states, united_states, united_states, united_states, mexico, united_states,
+        united_states, united_states, canada, united_states]
+      round_of_16: [united_states, united_states, united_states, united_states, united_states,
+        mexico, united_states, canada]
+      quarterfinal: [united_states, united_states, united_states, united_states]
+      semifinal: [united_states, united_states]
+      final: [united_states]
+- id: euro2008
+  kind: EURO
+  year: 2008
+  shape: euro16
+  hosts: [austria, switzerland]
+  groups:
+    A: [switzerland, czech_republic, portugal, turkey]
+    B: [austria, croatia, germany, poland]
+    C: [netherlands, italy, romania, france]
+    D: [greece, sweden, spain, russia]
+- id: euro2012
+  kind: EURO
+  year: 2012
+  shape: euro16
+  hosts: [poland, ukraine]
+  groups:
+    A: [poland, greece, russia, czech_republic]
+    B: [netherlands, denmark, germany, portugal]
+    C: [spain, italy, republic_of_ireland, croatia]
+    D: [ukraine, sweden, france, england]
+  knockout_seeds:
+  - [1A, 2B]
+  - [1C, 2D]
+  - [1B, 2A]
+  - [1D, 2C]
+  format_version: euro16-2012-v1
+- id: euro2016
+  kind: EURO
+  year: 2016
+  shape: euro24
+  hosts: [france]
+  groups:
+    A: [france, romania, albania, switzerland]
+    B: [england, russia, wales, slovakia]
+    C: [germany, ukraine, poland, northern_ireland]
+    D: [spain, czech_republic, turkey, croatia]
+    E: [belgium, italy, republic_of_ireland, sweden]
+    F: [portugal, iceland, austria, hungary]
+  knockout_seeds:
+  - [2A, 2C]
+  - [1D, 3-4]
+  - [1B, 3-2]
+  - [1F, 2E]
+  - [1C, 3-3]
+  - [1E, 2D]
+  - [1A, 3-1]
+  - [2B, 2F]
+  third_place_table:
+    A,B,C,D: {C: 1, D: 2, A: 3, B: 4}
+    A,B,C,E: {C: 1, A: 2, B: 3, E: 4}
+    A,B,C,F: {C: 1, A: 2, B: 3, F: 4}
+    A,B,D,E: {D: 1, A: 2, B: 3, E: 4}
+    A,B,D,F: {D: 1, A: 2, B: 3, F: 4}
+    A,B,E,F: {E: 1, A: 2, B: 3, F: 4}
+    A,C,D,E: {C: 1, D: 2, A: 3, E: 4}
+    A,C,D,F: {C: 1, D: 2, A: 3, F: 4}
+    A,C,E,F: {C: 1, A: 2, F: 3, E: 4}
+    A,D,E,F: {D: 1, A: 2, F: 3, E: 4}
+    B,C,D,E: {C: 1, D: 2, B: 3, E: 4}
+    B,C,D,F: {C: 1, D: 2, B: 3, F: 4}
+    B,C,E,F: {E: 1, C: 2, B: 3, F: 4}
+    B,D,E,F: {E: 1, D: 2, B: 3, F: 4}
+    C,D,E,F: {C: 1, D: 2, F: 3, E: 4}
+  format_version: euro24-2016-v1
+- id: euro2020
+  kind: EURO
+  year: 2020
+  shape: euro24
+  hosts: [england, italy, germany, russia, hungary, spain, netherlands, scotland, denmark]
+  groups:
+    A: [turkey, italy, wales, switzerland]
+    B: [denmark, finland, belgium, russia]
+    C: [netherlands, ukraine, austria, north_macedonia]
+    D: [england, croatia, scotland, czech_republic]
+    E: [spain, sweden, poland, slovakia]
+    F: [hungary, portugal, france, germany]
+  # 11 host cities in 11 countries (docs/data-sources.md): one venue country per real match,
+  # from the official schedule. group_venues: one per itertools.combinations(group, 2) pair
+  # (turkey-italy, turkey-wales, turkey-switzerland, italy-wales, italy-switzerland,
+  # wales-switzerland, in that order, and so on per group). knockout_venues: one per match,
+  # bracket order (Format.knockout_seeds, then each later round in walk's fold order).
+  venues:
+    groups:
+      A: [italy, azerbaijan, azerbaijan, italy, italy, azerbaijan]
+      B: [denmark, denmark, denmark, russia, russia, russia]
+      C: [netherlands, netherlands, netherlands, romania, romania, romania]
+      D: [england, england, england, scotland, scotland, scotland]
+      E: [spain, spain, spain, russia, russia, russia]
+      F: [hungary, hungary, germany, hungary, germany, germany]
+    knockout:
+      round_of_16: [spain, england, romania, denmark, scotland, england, hungary, netherlands]
+      quarterfinal: [germany, russia, italy, azerbaijan]
+      semifinal: [england, england]
+      final: [england]
+- id: euro2024
+  kind: EURO
+  year: 2024
+  shape: euro24
+  hosts: [germany]
+  venue: germany  # single host: every match, group and knockout, was in Germany
+  groups:
+    A: [germany, scotland, hungary, switzerland]
+    B: [spain, croatia, italy, albania]
+    C: [slovenia, denmark, serbia, england]
+    D: [poland, netherlands, austria, france]
+    E: [belgium, slovakia, romania, ukraine]
+    F: [turkey, georgia, portugal, czech_republic]
+- id: euro2028
+  kind: EURO
+  year: 2028
+  shape: euro24
+  hosts: [england, scotland, wales, republic_of_ireland]
+  groups: null

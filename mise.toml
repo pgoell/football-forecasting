@@ -25,6 +25,14 @@ run = "uv run scripts/download_football_data.py"
 description = "Download Understat xG (EPL, Bundesliga) into data/raw/"
 run = "uv run scripts/download_understat.py"
 
+[tasks."data:download:international-results"]
+description = "Download martj42/international_results (pinned commit) into data/raw/"
+run = "uv run scripts/download_international_results.py"
+
+[tasks."data:download:eloratings"]
+description = "Download eloratings.net results files (2004 to 2026) into data/raw/"
+run = "uv run scripts/download_eloratings.py"
+
 [tasks."dbt:build"]
 description = "Build and test the dbt models into data/warehouse.duckdb"
 dir = "{{config_root}}/dbt"
@@ -38,6 +46,22 @@ run = [
   "uv run python -m football_forecasting.backtest",
   "uv run python -m football_forecasting.market_aware",
 ]
+
+[tasks."national-elo:backtest"]
+description = "Development-only national-elo-v1 backtest (docs/tournament-spec.md); validation and the holdout are never touched"
+run = "uv run python -m football_forecasting.national_elo_backtest"
+
+[tasks."tournament:forecast"]
+description = "Forecast EURO 2020, WC 2022 and EURO 2024 with national-elo-v1, eloratings-v1 and naive-tournament-v1, store results (docs/tournament-spec.md)"
+run = "uv run python -m football_forecasting.tournament_run"
+
+[tasks."tournament:validate"]
+description = "Score national-elo-v1 on validation (EURO 2020, WC 2022, EURO 2024): match and rounds metrics, bootstrap CIs, success criteria as they read on validation. Run tournament:forecast first. Never touches the holdout (docs/tournament-spec.md)"
+run = "uv run python -m football_forecasting.tournament_validation"
+
+[tasks."tournament:holdout"]
+description = "HOLDOUT RUN, once: forecast and score national-elo-v1 on WC 2026 (104 finals matches), match and rounds metrics, bootstrap CIs, the real success criteria (docs/tournament-spec.md)"
+run = "uv run python -m football_forecasting.tournament_holdout"
 
 [tasks.dashboard]
 description = "Serve the backtest dashboard on localhost:8501"

@@ -30,3 +30,6 @@ dbt/.user.yml
 # Internet Archive responses cached by research/odds-timing/fetch.py
 research/odds-timing/cache/
 research/odds-timing/*_res.json
+
+# Agent worktrees
+.claude/worktrees/

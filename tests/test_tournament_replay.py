@@ -1,0 +1,253 @@
+"""Bracket tests (docs/tournament-spec.md, Simulator): fed the real group scores of each
+past World Cup and EURO, the format data and standings/bracket code must reproduce the
+real group tables and the real knockout pairings and champion.
+
+Real results only, no simulation: `standings()` runs on the actual scores, and each
+knockout pairing is checked against the actual match between those two teams (shootout
+winner from `shootouts.csv` where the 90 minutes, or extra time, were level). If the
+format data (groups, bracket template, tie-break order) is wrong, the pairing this
+produces will not match any real match and the lookup below fails loudly.
+
+EURO 2028 has no `groups` in the format data (the draw has not happened) and so is never
+parametrized here. WC 2026's real group draw and bracket ARE checked here: this is the
+correctness test of the format the HOLDOUT RUN instructions call for, run once before the
+one holdout scoring run, on the real results already in the warehouse (docs/tournament-spec.md,
+Simulator: "fed the real results of each past tournament, it must reproduce the real group
+tables and bracket"). It never touches match probabilities, ratings or scores, so it does
+not count as a second look at the holdout for the Rules against fooling ourselves.
+"""
+
+import itertools
+import random
+
+import duckdb
+import pytest
+
+from football_forecasting.data import WAREHOUSE
+from football_forecasting.tournament import (
+    GroupMatch,
+    bracket_slots,
+    home_of,
+    load_formats,
+    round_sequence,
+    standings,
+    walk,
+)
+from football_forecasting.tournament import _group_venues as group_venues
+from football_forecasting.tournament import _knockout_venues as knockout_venues
+
+# Real group standings decided by FIFA/UEFA's fair-play (disciplinary) tie-break, which we
+# have no data for (no yellow/red cards in martj42/international_results), the two cases
+# docs/data-sources.md records:
+# - 2018 World Cup Group H: Japan above Senegal, level on points, goal difference, goals
+#   scored and head-to-head; Japan had fewer yellow cards
+# - 2024 EURO Group C: Denmark above Slovenia, level on points, head-to-head and overall
+#   goal difference and goals scored; Denmark had fewer disciplinary points
+GROUP_OVERRIDES: dict[str, dict[str, list[str]]] = {
+    "wc2018": {"H": ["colombia", "japan", "senegal", "poland"]},
+    "euro2024": {"C": ["england", "denmark", "slovenia", "serbia"]},
+}
+
+# Common knowledge (Wikipedia), not part of the holdout: every one of these tournaments
+# finished before the spec's validation cutoff (2024-07-14).
+CHAMPIONS = {
+    "wc2006": "italy",
+    "wc2010": "spain",
+    "wc2014": "germany",
+    "wc2018": "france",
+    "wc2022": "argentina",
+    "euro2008": "spain",
+    "euro2012": "spain",
+    "euro2016": "portugal",
+    "euro2020": "italy",
+    "euro2024": "spain",
+    "wc2026": "spain",
+}
+
+
+def real_group_matches(
+    con: duckdb.DuckDBPyConnection, finals: str, edition: int, teams: tuple[str, ...]
+) -> list[GroupMatch]:
+    """The group match between each pair of `teams` (90-minute score): the earliest of any
+    matches between them in this tournament, in case a rematch happened in the knockout."""
+    placeholders = ",".join("?" * len(teams))
+    rows = con.execute(
+        f"""
+        select home_team_id, away_team_id, home_score_90, away_score_90
+        from stg_international_results__matches
+        where finals = ? and edition = ?
+            and home_team_id in ({placeholders}) and away_team_id in ({placeholders})
+        order by match_date
+        """,
+        [finals, edition, *teams, *teams],
+    ).fetchall()
+    matches, seen = [], set()
+    for home, away, home_goals, away_goals in rows:
+        pair = frozenset((home, away))
+        if pair in seen:
+            continue
+        seen.add(pair)
+        matches.append(GroupMatch(home, away, home_goals, away_goals))
+    return matches
+
+
+def real_decider(con: duckdb.DuckDBPyConnection, finals: str, edition: int):
+    """decide(a, b) for `walk`: the real winner of the match between a and b, penalty
+    shootouts (shootouts.csv, via stg_international_results__matches.shootout_winner)
+    breaking a full-time draw. A pair can have played twice (once in the group stage,
+    once more in the knockout stage, e.g. Spain v Italy at EURO 2012): the knockout
+    meeting is always the later of the two, so take the latest."""
+
+    def decide(team_a: str, team_b: str) -> str:
+        rows = con.execute(
+            """
+            select home_team_id, away_team_id, home_score, away_score,
+                shootout_winner, home_team, away_team
+            from stg_international_results__matches
+            where finals = ? and edition = ?
+                and ((home_team_id = ? and away_team_id = ?)
+                    or (home_team_id = ? and away_team_id = ?))
+            order by match_date desc
+            """,
+            [finals, edition, team_a, team_b, team_b, team_a],
+        ).fetchall()
+        assert 1 <= len(rows) <= 2, f"expected 1-2 {team_a} v {team_b} matches, found {len(rows)}"
+        home_id, away_id, home_goals, away_goals, shootout_winner, home_name, _ = rows[0]
+        if home_goals != away_goals:
+            return home_id if home_goals > away_goals else away_id
+        assert shootout_winner is not None, f"{team_a} v {team_b} level with no shootout winner"
+        return home_id if shootout_winner == home_name else away_id
+
+    return decide
+
+
+EDITIONS = [
+    ("wc2006", "WC", 2006),
+    ("wc2010", "WC", 2010),
+    ("wc2014", "WC", 2014),
+    ("wc2018", "WC", 2018),
+    ("wc2022", "WC", 2022),
+    ("euro2008", "EURO", 2008),
+    ("euro2012", "EURO", 2012),
+    ("euro2016", "EURO", 2016),
+    ("euro2020", "EURO", 2020),
+    ("euro2024", "EURO", 2024),
+    ("wc2026", "WC", 2026),
+]
+
+# martj42's one known error in `neutral` through 2024-07-14 (docs/data-sources.md, Tournament
+# formats): Wales v Switzerland, EURO 2020, 2021-06-12, was at Baku (neutral for both), but
+# martj42 has it non-neutral with Wales home (its `city`/`country` columns agree with neither
+# the real venue, Cardiff instead). Everything else in this set agrees exactly with `home_of`.
+NEUTRAL_FLAG_EXCEPTIONS = {("EURO", 2020, frozenset(("wales", "switzerland")))}
+
+
+@pytest.mark.parametrize(("format_id", "finals", "edition"), EDITIONS)
+def test_replay_reproduces_the_real_bracket_and_champion(format_id, finals, edition):
+    fmt = load_formats()[format_id]
+    assert fmt.groups is not None
+    con = duckdb.connect(str(WAREHOUSE), read_only=True)
+    try:
+        group_matches = {
+            letter: real_group_matches(con, finals, edition, teams)
+            for letter, teams in fmt.groups.items()
+        }
+        overrides = GROUP_OVERRIDES.get(format_id, {})
+        rng = random.Random(0)
+        order = {
+            letter: standings(
+                teams, group_matches[letter], fmt.tiebreak, rng, override=overrides.get(letter)
+            )
+            for letter, teams in fmt.groups.items()
+        }
+        slots = bracket_slots(fmt, order, group_matches, rng)
+        _, champion = walk(fmt.knockout_seeds, slots, real_decider(con, finals, edition))
+    finally:
+        con.close()
+    assert champion == CHAMPIONS[format_id]
+
+
+def test_euro2028_has_no_group_draw():
+    """WC 2026 now carries its real draw (docs/data-sources.md, WC 2026 draw and venues);
+    EURO 2028's has not happened yet."""
+    formats = load_formats()
+    assert formats["euro2028"].groups is None
+
+
+def real_home_and_neutral(
+    con: duckdb.DuckDBPyConnection, finals: str, edition: int
+) -> dict[frozenset, tuple[str, bool]]:
+    """Every real match of one tournament: the two teams (as a frozenset) to
+    (its home_team_id, its `neutral` flag) from martj42."""
+    rows = con.execute(
+        "select home_team_id, away_team_id, neutral from int_international_matches"
+        " where finals = ? and edition = ?",
+        [finals, edition],
+    ).fetchall()
+    return {frozenset((h, a)): (h, n) for h, a, n in rows}
+
+
+def test_home_of_agrees_with_martj42_neutral_flag():
+    """docs/tournament-spec.md: home only when a team plays in its own country. Checks
+    `home_of`, fed the venue data in tournament_formats.yaml (or, where none is known, its
+    fallback: a host of the whole tournament) against every real WC/EURO finals match in this
+    module's ten tournaments (through 2024-07-14), group and knockout stage alike."""
+    formats = load_formats()
+    con = duckdb.connect(str(WAREHOUSE), read_only=True)
+    mismatches = []
+    try:
+        for format_id, finals, edition in EDITIONS:
+            fmt = formats[format_id]
+            assert fmt.groups is not None
+            group_matches = {
+                letter: real_group_matches(con, finals, edition, teams)
+                for letter, teams in fmt.groups.items()
+            }
+            overrides = GROUP_OVERRIDES.get(format_id, {})
+            rng = random.Random(0)
+            order = {
+                letter: standings(
+                    teams, group_matches[letter], fmt.tiebreak, rng, override=overrides.get(letter)
+                )
+                for letter, teams in fmt.groups.items()
+            }
+            slots = bracket_slots(fmt, order, group_matches, rng)
+            real = real_home_and_neutral(con, finals, edition)
+
+            def check(
+                a: str,
+                b: str,
+                venue: str | None,
+                format_id: str = format_id,
+                finals: str = finals,
+                edition: int = edition,
+                fmt=fmt,
+                real=real,
+            ) -> None:
+                predicted = home_of(a, b, fmt.hosts, venue)
+                real_home, real_neutral = real[frozenset((a, b))]
+                ok = (predicted is None) == real_neutral and (
+                    real_neutral or predicted == real_home
+                )
+                if not ok and (finals, edition, frozenset((a, b))) not in NEUTRAL_FLAG_EXCEPTIONS:
+                    mismatches.append((format_id, a, b, real_home, real_neutral, predicted))
+
+            for letter, teams in fmt.groups.items():
+                venues = group_venues(fmt, letter, teams)
+                for i, (a, b) in enumerate(itertools.combinations(teams, 2)):
+                    check(a, b, venues[i] if venues is not None else None)
+
+            seeds = fmt.knockout_seeds
+            current = [(slots[x], slots[y]) for x, y in seeds]
+            decide = real_decider(con, finals, edition)
+            venues = knockout_venues(fmt)
+            venue_iter = iter(venues) if venues is not None else None
+            for _ in round_sequence(len(seeds)):
+                winners = []
+                for a, b in current:
+                    check(a, b, next(venue_iter) if venue_iter is not None else None)
+                    winners.append(decide(a, b))
+                current = list(zip(winners[0::2], winners[1::2], strict=False))
+    finally:
+        con.close()
+    assert not mismatches, mismatches

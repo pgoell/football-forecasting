@@ -13,7 +13,9 @@ Status per fact:
 ```sh
 mise run data:download            # 135 CSVs into data/raw/football-data/
 mise run data:download:understat  # 26 JSON files into data/raw/understat/
-git diff dbt/seeds/football_data_files.csv dbt/seeds/understat_files.csv
+mise run data:download:international-results  # 4 CSVs into data/raw/international-results/
+mise run data:download:eloratings  # 26 TSV files into data/raw/eloratings/
+git diff dbt/seeds/*_files.csv
 mise run dbt:build
 ```
 
@@ -193,6 +195,343 @@ xG counts as known with the result (`result_at`). How Understat computes xG, and
 
 Source: <https://www.sports-reference.com/termsofuse.html> (FBref's owner, "Last Updated: May 19, 2023"), archived <https://web.archive.org/web/20260812025756/https://www.sports-reference.com/termsofuse.html>. The second clause covers a forecasting model fitted on their data, however it is fetched. Rate limit, for the record: "we will block users sending requests to: FBref and Stathead sites more often than ten requests in a minute" (<https://www.sports-reference.com/bot-traffic.html>, archived <https://web.archive.org/web/20260928163442/https://www.sports-reference.com/bot-traffic.html>).
 
+## International football (for docs/tournament-spec.md)
+
+Checked on 2026-09-28, before the tournament spec was frozen; the data was stored the same day, after the freeze.
+
+Holdout: the checks below looked only at matches up to 2024-07-14. Tests that also cover later matches show those only as a count (`macros/holdout_silent.sql`), so no WC 2026 result is printed.
+
+### martj42/international_results: licence and score rules (checked)
+
+Licence: CC0 1.0 Universal, read in the repo's `LICENSE` file (<https://github.com/martj42/international_results/blob/master/LICENSE>, archived <https://web.archive.org/web/20260928180441/https://github.com/martj42/international_results/blob/master/LICENSE>).
+
+> "`home_score` - full-time home team score including extra time, not including penalty-shootouts"
+
+> "For home and away teams the *current* name of the team has been used."
+
+Source: the repo's README (<https://github.com/martj42/international_results/blob/master/README.md>, archived <https://web.archive.org/web/20260928180505/https://github.com/martj42/international_results/blob/master/README.md>). Files: `results.csv`, `goalscorers.csv`, `shootouts.csv`, `former_names.csv`. The header of `goalscorers.csv` has a `minute` column (`date,home_team,away_team,team,scorer,minute,own_goal,penalty`), so 90-minute scores can be derived. How it records stoppage time and whether every finals goal is listed: see below.
+
+### martj42: download (tested)
+
+`scripts/download_international_results.py` fetches the four CSVs from `https://raw.githubusercontent.com/martj42/international_results/<commit>/<file>` at commit `394fe81893b062fbc2cf6257e988ac7cc4c039a1` (master on 2026-09-28, committed 2026-08-26; tree archived <https://web.archive.org/web/20260928183245/https://github.com/martj42/international_results/tree/394fe81893b062fbc2cf6257e988ac7cc4c039a1>). The files come UTF-8 with Unix line endings (stored bytes equal the bytes received). `dbt/seeds/international_results_files.csv` records them; test `international_results_files_match_recorded_version` (warns).
+
+`stg_international_results__matches.match_id` is date, home team and away team: before 2011 a home team played twice on one day 31 times (last: Chile v Northern Ireland and Chile v Israel, 2010-05-30), and Tahiti met New Caledonia twice on 1974-02-17, so the second of those gets `_2`.
+
+### martj42: stoppage time and the 90-minute score (checked, tested)
+
+`goalscorers.csv` gives minutes as whole numbers, or `NA` (254 goals, all before 1998). Stoppage time is folded into minute 45 or 90; extra time runs 91 to 120. Checked against two matches:
+
+| Match | Goals (Wikipedia) | `minute` in the file |
+|---|---|---|
+| Brazil v Costa Rica, WC 2018-06-22 | Coutinho 90+1, Neymar 90+7 | 90, 90 |
+| England v Slovakia, EURO 2024-06-30 | Schranz 25; Bellingham 90+5; Kane 91 (extra time) | 25, 90, 91 |
+
+Sources: <https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_Group_E> ("Coutinho {{goal|90+1}}", "Neymar {{goal|90+7}}"), archived <https://web.archive.org/web/20260928183155/https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_Group_E>; <https://en.wikipedia.org/wiki/UEFA_Euro_2024_knockout_stage> ("Bellingham {{goal|90+5}}", "Kane {{goal|91}}"), archived <https://web.archive.org/web/20260928182946/https://en.wikipedia.org/wiki/UEFA_Euro_2024_knockout_stage>. In WC and EURO finals up to EURO 2024, minute 45 holds 32 goals and 46 holds 6, minute 90 holds 111 and 91 holds 1.
+
+So the 90-minute score counts goals at minute 90 or before (`home_score_90`, `away_score_90`). A knockout match that went to extra time comes out level at 90, whoever won it. `own_goal` rows carry the team credited with the goal: the counts match the scores below.
+
+The rule holds in WC and EURO finals, not everywhere (see the first test below). So `score_90_reliable` is true, and the 90-minute score filled, only when:
+
+- `goals_complete`: every goal is listed, each with a minute
+- the match is not awarded (`awarded`, from `dbt/seeds/international_awarded_matches.csv`)
+- outside finals, no goal is listed after minute 90 (`after_90` = 0). In finals, goals after 90 are extra time and the score stays
+
+Outside finals, 2006-01-01 to 2024-07-14: of 11,198 competitive matches, 6,944 have every goal listed and 43 of those have a goal after minute 90, so 6,901 keep a 90-minute score. Of 6,007 friendlies, 598 have every goal listed, none with a goal after 90. Every finals match from 2006 keeps its 90-minute score, holdout included (count only).
+
+Tests:
+
+- `goals_after_90_only_in_level_matches`: in finals from 2006, a match with a goal after minute 90 is level at 90 (22 such matches to EURO 2024). The rule does not hold everywhere: 2003 to 2005 World Cup qualifiers put some stoppage goals at 91 to 95 (Northern Ireland v Austria, 2004-10-13, a goal at 93 with the match 2-3 at the time), and second legs such as France v Republic of Ireland, 2009-11-18, went to extra time while not level at 90. So outside finals a match with a goal after 90 gets no 90-minute score
+- `score_90_only_where_reliable`: the 90-minute score is filled exactly where `score_90_reliable` is true, and that follows the rule above
+- `finals_goals_listed` (warns): every finals goal from 2006 is listed with a minute. It passes: all 535 development and validation matches, and the holdout (count only). Outside finals, 2006-01-01 to 2024-07-14: 6,944 of 11,198 competitive matches and 598 of 6,007 friendlies are complete
+- `score_90_within_full_score`: no team has more goals at 90 minutes than at the end
+- `finals_match_counts`: WC 2006 to 2022 have 64 matches each, WC 2026 104, EURO 2008 and 2012 31, EURO 2016, 2020 and 2024 51. It passes. EURO 2020, played in 2021, has `edition` 2020
+
+### eloratings.net: files and column meanings (checked, tested)
+
+The site's page loads `scripts/ratings.js` (archived <https://web.archive.org/web/20260928182759/https://www.eloratings.net/scripts/ratings.js>), which reads a results file line by line:
+
+> "row.date = formatDate(fields[0], fields[1], fields[2]); row.match = formatMatch(fields[3], fields[4]); row.score = fields[5] + '<br/>' + fields[6]; row.tournament = formatTournament(fields[7], fields[8] || fields[3], ...); row.changes = formatChange(fields[9]); row.ratings = fields[10] + '<br/>' + fields[11]; row.moves = fields[12] + '<br/>' + fields[13]; row.ranks = fields[14] + '<br/>' + fields[15];"
+
+(function `pushMatchRow`, lines joined, trailing arguments cut). The same script loads `teams.tsv`, `en.teams.tsv` and `en.tournaments.tsv`. So a line of `<year>_results.tsv` (example archived <https://web.archive.org/web/20260928182802/https://www.eloratings.net/2006_results.tsv>) is:
+
+| Field | Meaning |
+|---|---|
+| 0 to 2 | year, month, day; day `00` once (August 2004, Saint Martin v Sint Eustatius), date unknown |
+| 3, 4 | team codes |
+| 5, 6 | score, extra time included, shootout excluded (France v Italy, WC final 2006-07-09: 1 1) |
+| 7 | tournament code (`en.tournaments.tsv`: `WC` World Cup, `EC` European Championship, `EQ` its qualifier, `F` friendly) |
+| 8 | country played in; blank when team 1 is at home |
+| 9 | rating points team 1 gained; team 2 lost as many |
+| 10, 11 | ratings **after** the match |
+| 12 to 15 | rank moves and ranks after the match (moves use the minus sign U+2212) |
+
+Fields 10 and 11 are post-match: for every team and pair of its matches in a row, 2004 to 2026, the rating after the first plus the change in the second equals the rating after the second; as pre-match ratings, 58 of 1,484 steps in 2006 fit. Test: `eloratings_ratings_are_post_match` (count only). So `stg_eloratings__matches` gives pre-match ratings as post minus change for team 1 and post plus change for team 2. The ratings carry across the year files.
+
+`en.teams.tsv` maps a code to names (first name used; archived <https://web.archive.org/web/20260928182830/https://www.eloratings.net/en.teams.tsv>). `teams.tsv` maps old codes to the current one (`YU RS`, `RM RS`, `MK NM`, `SZ SW`, `AN CW` and others; archived <https://web.archive.org/web/20260928182805/https://www.eloratings.net/teams.tsv>). The 2004 to 2026 files still use four old codes (RM Serbia and Montenegro, MK Macedonia, SZ Swaziland, AN Netherlands Antilles); staging turns them into the current code, as martj42 turns them into the current name.
+
+`scripts/download_eloratings.py` fetches the three lookups and `<year>_results.tsv` for 2004 to 2026 (EURO 2004 in warm-up, then every scored year), one request a second. They come UTF-8 with Unix line endings (stored bytes equal the bytes received). The site rewrites its files: `2006_results.tsv` had `Last-Modified` 2026-09-27. `dbt/seeds/eloratings_files.csv` records them; test `eloratings_files_match_recorded_version` (warns).
+
+The files stored on 2026-09-28 are the data version: every check here and every score rests on them. Do not download again for the backtest. A new download may change past years (ratings and matches), and the script rewrites the seed, so `git diff dbt/seeds/eloratings_files.csv` shows which years changed; then either restore the old files or commit the new record and log the change in `docs/experiment-log.md`. `data/` is not in git, so keep a copy of `data/raw/eloratings/`: the site serves only its current files.
+
+### Team names (tested)
+
+`dbt/seeds/team_names.csv` gives each team one `team_id`, its martj42 name and its current eloratings.net code: 236 teams, every martj42 team since 2004 that eloratings.net rates. 226 match on the first eloratings name; 10 by hand (`Czech Republic` CZ Czechia, `Republic of Ireland` IE Ireland, `American Samoa` AS Eastern Samoa, `Macau` MO Macao, `Réunion` RE, `Saint Barthélemy` BL, `São Tomé and Príncipe` ST, `Timor-Leste` TL East Timor, `United States Virgin Islands` VI, `Vatican City` VA). Left out: 84 martj42 teams eloratings does not rate (Catalonia, Jersey, other non-FIFA sides), and 4 eloratings teams martj42 lacks (Saba, Sint Eustatius, Cocos and Christmas Islands). `odds_api_name` is empty until The Odds API data comes in.
+
+Tests:
+
+- `international_teams_mapped`: every WC and EURO finals match and every EURO qualifier from 2006 has both teams mapped and finds its eloratings.net match on the same date with the same team ids. All do, holdout included (count only), except Italy v Serbia, EURO 2012 qualifier, 2010-10-12: "The Italy v Serbia match was abandoned after six minutes due to rioting by Serbian fans. The UEFA Control and Disciplinary Body awarded the match as a 3–0 forfeit win to Italy." (<https://en.wikipedia.org/wiki/UEFA_Euro_2012_qualifying_Group_C>, archived <https://web.archive.org/web/20260928183022/https://en.wikipedia.org/wiki/UEFA_Euro_2012_qualifying_Group_C>). martj42 has it at 3-0 with no goals listed; eloratings.net leaves it out. It is the one row of `dbt/seeds/international_awarded_matches.csv`: `awarded` is true, so it has no 90-minute score and is never scored. Its 3-0 still stands in `home_score`; a rating model should skip it, as eloratings.net does
+- `finals_scores_match_eloratings`: both sources give the same score for every finals match from 2006. They do
+
+`int_international_matches` joins the two: martj42 matches with eloratings.net pre-match ratings and score, turned to martj42's home and away. The two sources put 74 matches (13 competitive ones from 2006 to 2024-07-14, such as Kazakhstan v Germany, 2013-03-22 in martj42 and 2013-03-23 in eloratings.net) one or two days apart. For those the join takes the nearest eloratings.net match of the same teams within two days, if no other martj42 match took it; `elo_match_date` shows the date eloratings.net gives. Which source has the right date was not checked.
+
+From 2006-01-01 to 2024-07-14, 10,655 of 11,198 competitive matches and 5,819 of 6,007 friendlies have eloratings ratings. The 543 competitive matches without, by cause (traced 2026-09-28):
+
+| Cause | Matches | Examples |
+|---|---|---|
+| a team eloratings.net does not rate | 498 | Island Games 184, CONIFA World Football Cup 99, Viva World Cup 59, CONIFA European Football Cup 49, Muratti Vase 32 (Jersey 55, Guernsey 52, Padania 43, Alderney 34 and 62 other sides) |
+| both teams rated, match not in eloratings.net, 3-0 with no goals listed | 20 | Italy v Serbia 2010-10-12, Romania v Norway 2020-11-15, Sri Lanka v Macau 2019-06-11: likely awarded; only Italy v Serbia is checked |
+| both teams rated, played match not in eloratings.net | 25 | ELF Cup 2006 7, Palestine International Championship 2014, Nehru Cup 2012 5, Merdeka Tournament 2007 4 |
+
+So nearly all misses are real: the matches are not in eloratings.net, or a side is not one it rates. The joins lose none of the scored matches (test `international_teams_mapped`). One mapping gap: eloratings.net's `KD` Kurdistan is martj42's `Kurdistan` (2012 and 2013 matches), but martj42 calls the same side `Iraqi Kurdistan` at the 2012 Viva World Cup, so two matches there (against Western Sahara, 2012-06-04, and Northern Cyprus, 2012-06-09) find no rating. The seed maps one name to each code, so they stay out.
+
+### eloratings.net (unverified terms)
+
+Files such as `https://www.eloratings.net/World.tsv` and `https://www.eloratings.net/<year>_results.tsv` answer without a key. No terms of use found: `/robots.txt` returns 404, and the about page loads its text by script, so it was not read. Used for private research only, at one request a second (docs/tournament-spec.md). Column meanings: see above.
+
+### The Odds API: internationals (checked)
+
+> "Historical odds data is available from June 6th 2020, with snapshots taken at 10 minute intervals. From September 2022, historical odds snapshots are available at 5 minute intervals."
+
+Cost: historical odds and historical event odds cost "10 per region per market"; historical events cost 1, nothing if no events. Source: <https://the-odds-api.com/liveapi/guides/v4/>, archived <https://web.archive.org/web/20260928180233/https://the-odds-api.com/liveapi/guides/v4/>. The guide says historical data is "only available on paid usage plans"; the home page lists historical odds for every plan, the free one included (<https://web.archive.org/web/20260928180421/https://the-odds-api.com/>). Assume paid.
+
+Plans: 20K credits $30/mo, 100K $59/mo, 5M $119/mo, 15M $249/mo.
+
+Earliest snapshots, featured markets (<https://the-odds-api.com/historical-odds-data/>, archived <https://web.archive.org/web/20260928180216/https://the-odds-api.com/historical-odds-data/>):
+
+| Key | Title | Earliest |
+|---|---|---|
+| `soccer_fifa_world_cup` | FIFA World Cup | 2022-04-03 |
+| `soccer_uefa_european_championship` | UEFA Euro 2024 | 2021-05-19 |
+| `soccer_uefa_nations_league` | UEFA Nations League | 2022-06-11 |
+| `soccer_uefa_euro_qualification` | UEFA Euro Qualification | 2023-10-12 |
+| `soccer_fifa_world_cup_qualifiers_europe` | FIFA World Cup Qualifiers, Europe | 2025-03-24 |
+| `soccer_conmebol_copa_america` | Copa América | 2024-04-10 |
+| outrights: FIFA World Cup Winner | | 2022-03-29 |
+
+No key for friendlies; no EURO winner outright listed. The EURO key starts on 2021-05-19, before EURO 2020 (11 June 2021), so it should hold that tournament; whether every match of EURO 2020 has odds is not checked (**unverified** until a paid key queries it).
+
+Cost for the spec: 270 tournament matches with odds (EURO 2020 51, WC 2022 64, EURO 2024 51, WC 2026 104), two snapshots each (`pre`, `close`), regions `eu` and `uk`, market `h2h`: 270 × 2 × 2 × 10 = 10,800 credits, plus about 300 for event lists and 40 for winner odds. One month of the 20K plan ($30) covers all of it.
+
+## Tournament formats (for the simulator, docs/tournament-spec.md)
+
+Checked on 2026-09-28. Format data (groups, bracket templates, tie-break order, best-third
+tables) lives in `src/football_forecasting/tournament_formats.yaml`, read by
+`football_forecasting.tournament`. Two research agents gathered this; one covered the
+World Cup, one EURO, each against the official regulations first and Wikipedia's tournament
+pages second. WC 2026 and EURO 2028 are format only: no group draw is stored for either
+(the 2026 draw is holdout; 2028 has not been drawn), so neither is fed through the
+bracket-replay tests.
+
+### Group compositions and hosts (checked)
+
+The final group membership and host nation(s) of WC 2006, 2010, 2014, 2018, 2022 and EURO
+2008, 2012, 2016, 2020, 2024, from Wikipedia's tournament and group-stage articles (e.g.
+<https://en.wikipedia.org/wiki/2018_FIFA_World_Cup>, <https://en.wikipedia.org/wiki/UEFA_Euro_2016>,
+and each edition's Group A to H/F pages), cross-checked against martj42/international_results
+by the bracket-replay tests below: every computed knockout pairing must match a real match
+between those two teams, so a wrong team-to-group assignment fails loudly. EURO 2020 had 11
+host cities in 11 countries; of those, England, Italy, Germany, Russia, Hungary, Spain,
+Netherlands, Scotland and Denmark also had a team in the tournament (`hosts` uses these 9).
+WC 2026 hosts (United States, Canada, Mexico) and EURO 2028 hosts (England, Scotland, Wales,
+Republic of Ireland; Northern Ireland's Belfast venue was dropped in September 2024) are
+common knowledge, confirmed at <https://en.wikipedia.org/wiki/UEFA_Euro_2028> and UEFA's own
+announcement <https://www.uefa.com/euro2028/news/0286-1923eef9a9a6-68c007509a1b-1000/>.
+
+### Group-stage tie-break order (checked)
+
+FIFA (2006 to 2022): points, goal difference, goals scored, all over every group match;
+then, among teams still level, points, goal difference and goals scored again but only
+counting matches between them; then fair play (disciplinary points, added for 2018 and
+2022 only) and drawing of lots. Source: 2010 regulations Art. 39.5, 2014 Art. 42.5, 2022
+Art. 12 (archived
+<https://web.archive.org/web/20260928185851/https://digitalhub.fifa.com/m/2744a0a5e3ded185/original/FIFA-World-Cup-Qatar-2022-Regulations_EN.pdf>).
+
+FIFA 2026 changes the order to UEFA's shape (Art. 13): head-to-head first (points, then
+goal difference, then goals scored, among the tied teams), reapplied to any teams still
+tied, then overall goal difference, overall goals scored, disciplinary points, then the
+FIFA World Ranking; drawing of lots is dropped. Archived:
+<https://web.archive.org/web/20260919152026/https://digitalhub.fifa.com/m/636f5c9c6f29771f/original/FWC2026_regulations_EN.pdf>.
+
+UEFA (2008 to 2028): head-to-head points, then head-to-head goal difference, then
+head-to-head goals scored, reapplied to any teams still tied; then overall goal difference,
+overall goals scored, then (varies a little by edition) wins, disciplinary points, UEFA's
+Qualifiers ranking, and lots (Germany only, 2024). Source: EURO 2024 regulations Art. 20,
+archived
+<https://web.archive.org/web/20220516115052/https://documents.uefa.com/api/khub/maps/5tYSJw48iUOPsbIGOxQA4w/attachments/_dSxuIv48n81YqITx97r~g/content>.
+
+`standings()` implements: points over every match; then, for FIFA rules, goal difference
+and goals scored over every match; then one combined head-to-head step (points, goal
+difference, goals scored, in that order, from the same head-to-head matches, reapplied
+fresh to any teams still tied after it); then, for UEFA rules, overall goal difference and
+goals scored; then one random draw standing in for every criterion after that (fair play,
+wins, disciplinary points, coefficient or ranking, drawing of lots): none of these are in
+martj42/international_results (no cards, no rankings), so they cannot be told apart, and
+the spec calls for a random stand-in with a note (docs/tournament-spec.md, Simulator). The
+head-to-head step matters: at EURO 2024, Group E finished four teams level on points, and
+Romania's higher goals scored across the whole group (not just against Belgium) put it
+above Belgium for 2nd place; a version that re-narrowed to just the Belgium-Romania match
+before comparing goals scored would rank them the other way around, and the replay test for
+that tournament catches exactly this.
+
+Two real groups needed a tie-break not in the data at all (fair play, i.e. disciplinary
+points), recorded as `GROUP_OVERRIDES` in `tests/test_tournament_replay.py`:
+
+- WC 2018 Group H: Japan above Senegal, level on points, goal difference, goals scored and
+  head-to-head (2-2); Japan had fewer yellow cards. First time a World Cup group was decided
+  on fair play. <https://web.archive.org/web/20260805051942/https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_Group_H>
+- EURO 2024 Group C: Denmark above Slovenia, level on points, head-to-head (1-1) and overall
+  goal difference and goals scored; Denmark had fewer disciplinary points.
+  <https://www.uefa.com/euro2024/news/028e-1b2b61087cf5-b6b99ef482fc-1000/>
+
+No other group, and no cross-group ranking of third-placed teams, needed fair play,
+coefficient ranking or lots in the ten tournaments checked (both research agents scanned
+every group of all ten).
+
+### Knockout bracket templates (checked)
+
+WC 32-team format (2006 to 2022), Round of 16: 1A-2B, 1C-2D, 1E-2F, 1G-2H, 1B-2A, 1D-2C,
+1F-2E, 1H-2G, unchanged across all five editions; quarterfinals and semifinals fold the
+winners in that order (winners of matches 1 and 2 meet, then 3 and 4, and so on). Source:
+2010 regulations Art. 40 to 42, 2014 Art. 43 to 45, 2022 Art. 12.7 to 12.9, checked against every
+real Round of 16 pairing 2006 to 2022.
+
+WC 48-team format (2026 on): 12 groups, top 2 plus the 8 best third-placed teams reach a
+Round of 32 (FIFA regulations Art. 12.6 to 12.11). Which third-placed team plays which group
+winner depends on which 8 of the 12 groups' thirds qualify: FIFA's Annexe C lists all
+C(12, 8) = 495 possible sets, each with its own assignment; the full table is in
+`tournament_formats.yaml` under the `wc48` shape. Source (archived):
+<https://web.archive.org/web/20260919152026/https://digitalhub.fifa.com/m/636f5c9c6f29771f/original/FWC2026_regulations_EN.pdf>.
+
+EURO 16-team format (2008, 2012): quarterfinals 1A-2B, 1B-2A, 1C-2D, 1D-2C in both
+editions, but the semifinal pairing changed: 2008 (only two knockout-stage venues) kept
+QF1/QF2's winners apart from QF3/QF4's until the final; 2012 used the usual QF1/QF3 and
+QF2/QF4 split. Source: 2008 regulations Art. 7.10 (archived
+<https://web.archive.org/web/20081218110457/http://www.uefa.com/newsfiles/19079.pdf>), 2012
+Art. 8.10 (archived
+<https://web.archive.org/web/20111026215154/https://www.uefa.com/MultimediaFiles/Download/Regulations/competitions/Regulations/91/48/36/914836_DOWNLOAD.pdf>).
+
+EURO 24-team format (2016, 2020, 2024, 2028): top 2 plus the 4 best third-placed teams
+reach a Round of 16. 2016 used its own Round of 16 schedule and its own "ranking of
+third-placed teams" table (winners of A, B, C, D each meet a third); 2020, 2024 and the
+2028 draft regulations share one schedule and one table (winners of B, C, E, F each meet a
+third). Both tables (15 rows each, one per set of 4 qualifying groups out of A-F) are in
+`tournament_formats.yaml`. Source: 2016 regulations Art. 17.02/18.03 (archived
+<https://web.archive.org/web/20131219025616/http://www.uefa.com/MultimediaFiles/Download/Regulations/uefaorg/Regulations/02/03/92/81/2039281_DOWNLOAD.pdf>),
+2020 Art. 21.04 (archived
+<https://web.archive.org/web/20210511180320/https://documents.uefa.com/internal/api/webapp/documents/WVKcnryVkASzztwJjPBcIw/content>),
+2024 (same document as the tie-break quote above); 2028's draft table matches 2024's
+row for row.
+
+### Knockout draw and hosts (spec rule)
+
+Every computed pairing above is checked against martj42/international_results by
+`tests/test_tournament_replay.py`: the real winner (shootouts.csv for a penalty
+shootout) of each pairing feeds the next round, and the champion must match the real
+one. All ten tournaments (WC 2006-2022, EURO 2008-2024) reproduce their real group
+tables, brackets and champion. A pair that met twice (once in the group stage, once
+again in the knockout stage, e.g. Spain v Italy at EURO 2012) is resolved by the later
+of the two real matches.
+
+Extra time and penalties are not modelled apart: a 90-minute draw in a knockout match
+goes through with `P(H) / (P(H) + P(A))` of the model's own win chances
+(docs/tournament-spec.md, Simulator); this has no effect on the replay tests, which use
+real results throughout. "Home" in a group or knockout match is the team whose own
+country is the real venue, else neutral (docs/tournament-spec.md); where the venue is not
+known match by match (EURO 2028, four host associations, drawn some 2028), `home_of`
+falls back to: a host nation of the whole tournament if exactly one of the two teams is
+one, else neutral. See "Venue country per match slot" below for where the fallback still
+applies and where real venues are used instead.
+
+### Venue country per match slot (checked, tested)
+
+Six of the seven tournaments checked here are single-host: every match, group and
+knockout, was played in the host country (WC 2006, 2010, 2014, 2018, 2022; EURO 2024),
+recorded as `venue` in `tournament_formats.yaml`. EURO 2028 (four hosts) has no group draw
+yet, so `home_of` uses the fallback rule until the draw and the venue schedule are known
+(both due after the spec is frozen). WC 2026 (three hosts) has its own venue schedule: see
+below.
+
+EURO 2020 is the exception: 11 host cities in 11 countries (9 with a team in the
+tournament; Azerbaijan and Romania are not), so venue country varies match by match
+(`venues.groups` and `venues.knockout` in `tournament_formats.yaml`, one entry per real
+match, keyed by group/round position). Sourced from Wikipedia's "UEFA Euro 2020" article
+(<https://en.wikipedia.org/wiki/UEFA_Euro_2020>, archived
+<https://web.archive.org/web/20260928194405/https://en.wikipedia.org/wiki/UEFA_Euro_2020>:
+the host-cities table, and the note that Dublin's matches were reassigned to Saint
+Petersburg (group stage) and London (round of 16) and Bilbao's to Seville), the six "UEFA
+Euro 2020 Group A" to "Group F" articles (one "Venue: [stadium], [city]" line per group
+match), and "UEFA Euro 2020 knockout phase"
+(<https://en.wikipedia.org/wiki/UEFA_Euro_2020_knockout_phase>, archived
+<https://web.archive.org/web/20260928194446/https://en.wikipedia.org/wiki/UEFA_Euro_2020_knockout_phase>:
+a venue column for every round of 16, quarterfinal, semifinal and final match).
+
+Checked two ways: `tests/test_tournament_replay.py::test_home_of_agrees_with_martj42_neutral_flag`
+compares `home_of`, fed this venue data (or the fallback where there is none), against
+`int_international_matches.neutral` and `home_team_id` for every real match of all ten
+WC 2006-2022/EURO 2008-2024 tournaments (530 matches); it passes with one documented
+exception. Separately, `results.csv`'s own `city`/`country` columns (not otherwise used
+or checked elsewhere in this document) agree with the sourced venues on 50 of the 51
+EURO 2020 matches.
+
+The one exception, in both checks: Wales v Switzerland, EURO 2020, 2021-06-12. Wikipedia
+has it at Baku (neutral for both teams, part of Group A's away-from-Italy fixtures,
+alongside Turkey v Wales and Switzerland v Turkey, also at Baku). martj42 has `city`
+"Cardiff", `country` "Wales" (Wales's own city, not a EURO 2020 venue at all) and
+`neutral` false with `home_team` Wales: an error, not a second real convention, since
+Wales did not play a single tournament match at home. Recorded as
+`NEUTRAL_FLAG_EXCEPTIONS` in `tests/test_tournament_replay.py`; `national_elo.py`'s own
+Elo ratings still read `neutral` from martj42 directly (docs/tournament-spec.md's
+model step, not the simulator), so this one match keeps a small, undetected home-advantage
+error there, immaterial against 369 development finals matches.
+
+### WC 2026 draw and venues (checked, tested)
+
+Checked 2026-09-28, for the HOLDOUT RUN. The real group draw (5 December 2025) and the
+host country of every match were entered into `tournament_formats.yaml`'s `wc2026` edition
+from Wikipedia's "2026 FIFA World Cup" group articles (`2026 FIFA World Cup Group A`
+through `Group L`, e.g.
+<https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_A>) and FIFA's own tournament
+site (<https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026>), the same
+two kinds of source as every earlier tournament in this document.
+
+Cross-checked against martj42/international_results, the same way as the ten development
+and validation tournaments: clustering the 72 real group-stage matches (2026-06-11 to
+2026-06-27) into round-robin groups of 4 by opponent reproduces exactly the 12 Wikipedia
+groups, with the same 48 teams, no mismatch. The host country of each of the 104 real
+matches (`results.csv`'s own `country` column, already joined in as
+`int_international_matches.country`) matches the group and knockout venue lists now in
+`tournament_formats.yaml` for every match: `home_of`, fed this venue data, agrees with
+`neutral`/`home_team_id` for all 104 (folded into
+`tests/test_tournament_replay.py::test_home_of_agrees_with_martj42_neutral_flag`, now
+covering `wc2026` too, no exception needed).
+
+The round-of-32 seed-to-team mapping (`knockout_seeds`, and which row of the 495-row
+third-place table applies) was not typed in by hand: it falls out of running the existing
+`standings()` / `bracket_slots()` / `walk()` code on the real group results, the same
+"replay" the HOLDOUT RUN instructions call for as a correctness check of the format before
+any scoring. It reproduces the real bracket exactly, real pairing by real pairing, and the
+real champion (Spain, beating Argentina 1-0 in the final; France beat England in the
+third-place match) with no fair-play override needed anywhere: every group's tie-break
+resolves by points, head-to-head or goal difference alone (WC 2026 uses the UEFA-style
+order, `RULESETS["wc2026"]`), unlike WC 2018 and EURO 2024's one group each. This replay
+uses real WC 2026 results already in the warehouse; it checks the format data only (groups,
+bracket template, venues), makes no model or scoring choice, and so is not a second look at
+the holdout for docs/tournament-spec.md's Rules against fooling ourselves.
+
 ## Open checks
 
-- 2 rows with a margin over 30% (1 William Hill, 1 Interwetten): the dbt test `odds_overround_plausible` warns on them; likely source errors, not yet traced.
+- The dbt test `odds_overround_plausible` warns on 65 single-bookmaker rows outside a margin of -1% to 30% (counted 2026-09-28). Likely source errors, not traced, and left in: marking them unreliable would change the stored scores.
+  - E0 and D1: 2 rows at `pre` (William Hill D1 2011/12, 73%; Interwetten D1 2019/20, 31%)
+  - D2, E1, E2 before 2024/25: 17 rows over 8 bookmakers, one or two a season (11 over 30%, 6 under -1%; Stan James D2 2009/10 to 2011/12, Sportingbet E1 2009/10 and E2 2007/08, William Hill E2 2010/11 among them)
+  - Betfair Exchange (`BFE`), D2, E1 and E2 from 2024/25: 31 rows (26 at `pre` with margins up to 183%, 5 at `close`); see the D2, E1 and E2 section
+  - E1 and E2 2025/26 at `close`: 15 rows on 7 matches, several bookmakers each under -1%, so likely stale closing prices
