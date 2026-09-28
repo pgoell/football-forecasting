@@ -24,6 +24,8 @@ mise run data:download  # Football-Data CSVs into data/raw/
 mise run dbt:build      # dbt models and tests into data/warehouse.duckdb
 ```
 
+Where each fact about the data comes from, and how to check it: [docs/data-sources.md](docs/data-sources.md).
+
 ## Phases
 
 0. Define the experiment

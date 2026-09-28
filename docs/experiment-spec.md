@@ -41,6 +41,8 @@ Football-Data facts that shape the experiment:
 - Betfair Exchange (`BFE*`): from 2024/25
 - Terms: private, non-commercial use only
 
+Quotes, archived sources and checks for each fact: `docs/data-sources.md` in the repo.
+
 ## Target
 
 `P(Home), P(Draw), P(Away)` per match, summing to 1.
@@ -90,7 +92,7 @@ CLV per bet = `odds_taken / close_odds_devigged - 1`.
 - Bet when `EV = p_model * odds - 1` exceeds a threshold
 - Flat 1-unit stake, at most one outcome per match
 - Odds: bet365 (`B365*`), licensed in Germany; no Max odds, no line shopping. Football-Data likely records the international site, not bet365.de, so this stands in for executable odds until paper trading checks them
-- Cost: 5.3% German betting tax on stake (the law puts the tax on the bookmaker; bet365 says it absorbs it, unverified), so the backtest assumes the worse case
+- Cost: 5.3% of the stake (the law puts the tax on the bookmaker at 5.03% of the gross stake; bet365 says it absorbs it, unverified), so the backtest assumes the worse case
 - At most 3 thresholds tried, on validation only; the holdout sees one
 
 ## Success criteria
@@ -133,3 +135,4 @@ Criterion 4 alone proves little. At average odds ~2.5, flat-stake ROI has a stan
 - 2026-09-28: first draft
 - 2026-09-28: data sources; `pre` timing; Pinnacle dates and Betfair fallback; bet365 as executable odds
 - 2026-09-28: frozen; holdout kept at 2023/24 to 2025/26, no time budget
+- 2026-09-28: note only, no rule change: the legal tax is 5.3% of the stake net of tax (5.03% gross); the backtest keeps 5.3% as the worse case

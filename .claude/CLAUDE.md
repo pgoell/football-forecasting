@@ -5,6 +5,6 @@ Project notes: Kasten vault, `02 Projects/Football Forecasting/`. Start with its
 - On the VPS: disk or Kasten MCP, at `/home/pascal/kasten-data/vault/02 Projects/Football Forecasting/`
 - Elsewhere: Kasten MCP
 
-Experiment rules: `docs/experiment-spec.md`.
+Experiment rules: `docs/experiment-spec.md`. Data facts and their sources: `docs/data-sources.md`.
 
 Commands: `mise tasks`. Commits: Conventional Commits.
