@@ -4,11 +4,11 @@ pre-commit:
   jobs:
     - name: format
       glob: "*.py"
-      run: uv run ruff format {staged_files}
+      run: uv run ruff format --force-exclude {staged_files}
       stage_fixed: true
     - name: lint
       glob: "*.py"
-      run: uv run ruff check {staged_files}
+      run: uv run ruff check --force-exclude {staged_files}
 
 commit-msg:
   jobs:

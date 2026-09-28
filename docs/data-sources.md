@@ -30,9 +30,25 @@ Site: <https://www.football-data.co.uk>. Files: `https://www.football-data.co.uk
 
 Source: <https://www.football-data.co.uk/matches.php>, archived <https://web.archive.org/web/20260928135512/https://football-data.co.uk/matches.php>.
 
-`int_odds.available_at` for `pre` uses this rule: matches Friday to Monday get Friday 17:00 UK time, Tuesday to Thursday get Tuesday 13:00, capped at kickoff. With kickoff times (2019/20 onward) that gives a median lead of 22h and a maximum of 75h; one Tuesday 12:30 kickoff hits the cap. Test: `pre_odds_lead_time_plausible` (0 to 96h).
+`int_odds.available_at` for `pre` uses this rule: matches Friday to Monday get Friday 17:00 UK time, Tuesday to Thursday get Tuesday 13:00 (15:00 before 2017/18, see below), capped at kickoff. With kickoff times (2019/20 onward) that gives a median lead of 22h and a maximum of 75h; one Tuesday 12:30 kickoff hits the cap. Test: `pre_odds_lead_time_plausible` (0 to 96h).
 
-**Unverified**: whether the rule held in every season since 2000/01, holiday weeks included. See [Open checks](#open-checks).
+**Checked against archived copies** ([research/odds-timing/](../research/odds-timing/README.md), rerunnable):
+
+| Period | Stated rule (archived `matches.php` / `notes.txt`) |
+|---|---|
+| 2003 to 2007 | "Friday afternoons" / "Tuesday afternoons", no clock time |
+| Aug 2007 to May 2008 | fixtures "usually made available by Friday 15:00", midweek "by Tuesday 15:00" |
+| Sep 2008 | weekend moves to "Friday 17:00 (2 hours later than previous on account of Betbrain's extra delays)" |
+| by Sep 2011 | Friday "not later than 17:00", Tuesday "not later than 15:00" |
+| Aug to Sep 2017 onward | Tuesday "not later than 13:00", and "generally" added to the Friday sentence |
+
+- Odds never revised after the fact: in every archived copy, 2007/08 to 2026/27, odds equal the final files (high confidence). Earlier seasons only have copies taken after the season ended; those match too.
+- No copy taken after the rule time lacked odds.
+- Weekend, Friday 17:00: a safe upper bound in normal weeks. Before Sep 2008 the site said 15:00, so 17:00 is conservative there.
+- Midweek before 2017/18: the site said Tuesday 15:00, so `int_odds` uses 15:00 for those seasons.
+- 20 Dec to 5 Jan: a copy from 2015-12-28 04:27 UTC already held odds for Mon 28 to Wed 30 Dec as one batch, suggesting collection over the Christmas weekend, later than the modeled Fri 25 Dec 17:00 for the Monday games. No copy falls between 24 and 28 Dec to confirm it. `int_odds.pre_timing_uncertain` flags pre odds in this window (9,264 of 163,235 rows), so a backtest can leave them out or test with and without them.
+- March 2020: 9 D1 games had odds for 13 to 16 March, were postponed, and appear in the final file on new dates with new odds. Expected.
+- No before-kickoff copies at all for 2000/01 to 2003/04, 2008/09, 2009/10, 2012/13 and 2021/22 onward: the rule there rests on the stated wording alone.
 
 ### Pre-closing and closing odds (checked)
 
@@ -101,5 +117,4 @@ From one research agent on 2026-09-28, checked on the providers' own pages by th
 
 ## Open checks
 
-- Whether the Friday/Tuesday collection rule held in every season, holiday weeks included: under way, comparing archived copies of Football-Data's files with the final files.
 - 2 rows with a margin over 30% (1 William Hill, 1 Interwetten): the dbt test `odds_overround_plausible` warns on them; likely source errors, not yet traced.
