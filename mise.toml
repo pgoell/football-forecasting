@@ -18,7 +18,7 @@ run = [
 # ─── Data ───────────────────────────────────────────────────────────────────
 
 [tasks."data:download"]
-description = "Download Football-Data CSVs (E0, D1) into data/raw/"
+description = "Download Football-Data CSVs (dbt/seeds/leagues.csv) into data/raw/"
 run = "uv run scripts/download_football_data.py"
 
 [tasks."data:download:understat"]

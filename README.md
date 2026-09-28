@@ -2,7 +2,7 @@
 
 Predict football matches with statistical models (Elo, Poisson, Dixon-Coles, later gradient boosting), then test whether the forecasts beat the betting market after costs.
 
-First milestone: Premier League and Bundesliga, 1X2 (home win, draw, away win) only, strict walk-forward backtest against Elo and the devigged market.
+First milestone: Premier League and Bundesliga, 1X2 (home win, draw, away win) only, strict walk-forward backtest against Elo and the devigged market. Second experiment: the same question in thinner markets, 2. Bundesliga, Championship and League One (pre-registered in the spec's change log).
 
 The rules of the experiment live in [docs/experiment-spec.md](docs/experiment-spec.md). Read them before changing a model or a metric.
 

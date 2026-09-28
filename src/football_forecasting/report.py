@@ -31,6 +31,7 @@ SCORED = """
 with p as (
     select
         p.*,
+        m.league,
         m.season,
         case when m.season < $validation then 'development' else 'validation' end as period,
         p.horizon = 'pre' and m.pre_timing_uncertain as uncertain,
@@ -46,6 +47,7 @@ with p as (
     inner join wh.int_matches as m using (match_id)
     where m.season >= $development and m.season < $holdout
         and p.model_version in (select unnest($models))
+        and ($leagues is null or m.league in (select unnest($leagues)))
 ),
 
 common as (
@@ -78,6 +80,7 @@ class Selection:
     horizon: str | None = None
     period: str | None = None
     certain_only: bool = False
+    leagues: tuple[str, ...] | None = None  # None: every league
 
 
 def query(con: duckdb.DuckDBPyConnection, sql: str, sel: Selection) -> duckdb.DuckDBPyConnection:
@@ -90,6 +93,7 @@ def query(con: duckdb.DuckDBPyConnection, sql: str, sel: Selection) -> duckdb.Du
         "horizon": sel.horizon,
         "period": sel.period,
         "certain_only": sel.certain_only,
+        "leagues": list(sel.leagues) if sel.leagues else None,
     }
     return con.execute(f"with scored as ({SCORED}) {sql}", params)
 
@@ -145,14 +149,17 @@ def calibration(
     )
 
 
-def bootstrap(diff: np.ndarray, days: np.ndarray, draws: int = 1000) -> tuple[float, float]:
-    """95% interval of mean(diff), resampling whole matchdays; `days` labels each row."""
+def bootstrap(
+    diff: np.ndarray, days: np.ndarray, draws: int = 1000, level: float = 0.95
+) -> tuple[float, float]:
+    """Interval of mean(diff), resampling whole matchdays; `days` labels each row."""
     ids = np.unique(days, return_inverse=True)[1]
     k = ids.max() + 1
     rng = np.random.default_rng(0)
     counts = np.stack([np.bincount(d, minlength=k) for d in rng.integers(0, k, (draws, k))])
     boot = counts[:, ids] @ diff / counts[:, ids].sum(axis=1)
-    lo, hi = np.percentile(boot, [2.5, 97.5])
+    tail = 50 * (1 - level)
+    lo, hi = np.percentile(boot, [tail, 100 - tail])
     return float(lo), float(hi)
 
 

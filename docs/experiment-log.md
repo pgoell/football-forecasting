@@ -278,3 +278,82 @@ Fitted weight `b` on xg-dc: +0.11 and +0.03 in the first two `pre` fits, then ne
 - **Does any new model add information to the market?** No, at either horizon. `market-shots-v1` and `market-xg-v1` score the same as the market or slightly worse, every validation interval holding 0, and the disagreement slopes are 0. The market already prices what shots and xG say.
 
 Reading: features built from what happened in past matches (goals, shots, xG, schedule) have reached the market's level of information and no further. What the market has and we lack is likely news before the match: line-ups, injuries, suspensions and transfers. Question 2b still fails; question 3 (CLV) remains open.
+
+## 2026-09-28: thin markets, D2, E1 and E2
+
+The question and the test were pre-registered in `docs/experiment-spec.md` (change log, 2026-09-28) before any data for these leagues was downloaded. Data seen: warm-up, development and validation seasons (2000/01 to 2022/23) of D2, E1 and E2, besides E0 and D1. The holdout is never loaded. Nothing was tuned.
+
+### How the models carry teams across leagues
+
+Fixed and written here before any development or validation score of these leagues was seen. The only look at data was the warm-up check below.
+
+- `elo-country-v1`: `elo-v1` (K 20, home advantage 60, one ordered logit on all matches it sees, refit each season) with ratings keyed by country, not league, so a team keeps its rating when it goes up or down. A team in none of the country's covered leagues the season before (from the Regionalliga or 3. Liga into D2, from League Two or the National League into E2) starts at the mean rating of the league it enters, over that league's teams of the season before, minus 100: the `elo-v1` gap between its promoted rating (1400) and the league average (1500). In 2000/01 every team starts at 1500 less 100 per tier below the top (E1 and D2 at 1400, E2 at 1300); the warm-up seasons then move the levels.
+- `dixon-coles-country-v1`: `dixon-coles-v1` (window of three seasons, xi, promoted prior and penalty sd unchanged) fitted on all covered leagues of a country together, so a team that moved has one attack and one defence fitted on its matches in both leagues. One mean for the country; home advantage and rho per league, as `dixon-coles-v1` fits them per league. The penalty pulls each team toward its league's level instead of toward 0: a free attack and defence level per league, 0 in the top league, fixed by the teams that moved. A team from below the covered leagues gets the promoted prior (attack −0.32, defence +0.25) on top of its league's level. A team's league is the one of its latest season in the window.
+- The engine runs both on all five leagues, so they also store forecasts for E0 and D1; those are not part of this test. The first experiment's models (`elo-v1`, `poisson-v1`, `dixon-coles-v1`, `shots-dc-v1`, `xg-dc-v1`) still run on E0 and D1 only, and their stored forecasts do not change: `elo-v1`'s single ordered logit would move with more leagues. `naive-v1` and `market-consensus-v1` work per league and run on all five.
+- Blends `market-elo-country-v1` and `market-dc-country-v1`: `market_aware.py` unchanged, fitted per league and horizon.
+
+Warm-up check (`uv run research/country-levels/levels.py`, warm-up seasons only): where the league levels stand after each season.
+
+| After | E0 | E1 | E2 | D1 | D2 |
+|---|---|---|---|---|---|
+| Elo mean, 2000/01 | 1500 | 1400 | 1300 | 1500 | 1400 |
+| Elo mean, 2004/05 | 1545 | 1399 | 1250 | 1529 | 1351 |
+| DC attack / defence level, 2001/02 | 0 / 0 | −0.40 / +0.40 | −0.65 / +0.65 | 0 / 0 | −0.33 / +0.39 |
+| DC attack / defence level, 2004/05 | 0 / 0 | −0.34 / +0.37 | −0.51 / +0.65 | 0 / 0 | −0.32 / +0.29 |
+
+The Dixon-Coles levels settle within a season, at about the size of the promoted prior per step down. The Elo gaps are still widening at the end of the warm-up (from 100 to about 150 per step), since only the few teams that move each season carry rating between leagues; within a league only rating differences matter, so this touches promoted and relegated teams alone.
+
+### Log loss per league
+
+On the matches all six models predicted, so the blends' first season (2005/06 at `pre`, 2012/13 at `close`) drops out (`uv run research/thin-markets-check/check.py`):
+
+| League | Period | Horizon | n | Naive | Elo-country | DC-country | Market | market-elo-country | market-dc-country |
+|---|---|---|---|---|---|---|---|---|---|
+| D2 | development | pre | 3,978 | 1.0748 | 1.0550 | 1.0565 | 1.0417 | 1.0446 | 1.0441 |
+| D2 | development | close | 1,836 | 1.0860 | 1.0800 | 1.0796 | 1.0613 | 1.0648 | 1.0644 |
+| D2 | validation | pre | 1,224 | 1.0793 | 1.0535 | 1.0545 | 1.0458 | 1.0458 | 1.0455 |
+| D2 | validation | close | 1,224 | 1.0793 | 1.0534 | 1.0544 | 1.0438 | 1.0451 | 1.0454 |
+| E1 | development | pre | 7,176 | 1.0754 | 1.0537 | 1.0542 | 1.0427 | 1.0440 | 1.0443 |
+| E1 | development | close | 3,312 | 1.0789 | 1.0485 | 1.0507 | 1.0278 | 1.0318 | 1.0313 |
+| E1 | validation | pre | 2,208 | 1.0814 | 1.0579 | 1.0569 | 1.0461 | 1.0476 | 1.0474 |
+| E1 | validation | close | 2,208 | 1.0814 | 1.0578 | 1.0569 | 1.0453 | 1.0465 | 1.0467 |
+| E2 | development | pre | 7,176 | 1.0761 | 1.0568 | 1.0577 | 1.0408 | 1.0428 | 1.0430 |
+| E2 | development | close | 3,312 | 1.0788 | 1.0602 | 1.0622 | 1.0382 | 1.0397 | 1.0399 |
+| E2 | validation | pre | 2,055 | 1.0746 | 1.0373 | 1.0377 | 1.0146 | 1.0129 | 1.0130 |
+| E2 | validation | close | 2,056 | 1.0745 | 1.0372 | 1.0376 | 1.0104 | 1.0097 | 1.0101 |
+
+These leagues are harder to forecast than E0 and D1 (market 1.01 to 1.06 against 0.97), and the market beats Elo-country and DC-country in every row. On validation at `pre` it leads Elo-country by 0.008 in D2, 0.012 in E1 and 0.023 in E2, against 0.016 for `elo-v1` in E0 and D1: the gap is narrower only in D2.
+
+### Criterion 2b, as pre-registered
+
+Base model: `elo-country-v1`, development log loss at `pre` 1.0562 against 1.0572 for `dixon-coles-country-v1` (19,740 matches, three leagues), so the test uses `market-elo-country-v1`. Blend minus market on validation, paired, 99% interval from 10,000 bootstrap draws over matchdays:
+
+| League | Horizon | n | Market | market-elo-country − Market | Pass |
+|---|---|---|---|---|---|
+| D2 | pre | 1,224 | 1.0458 | +0.0000 (−0.0020, +0.0020) | no |
+| D2 | close | 1,224 | 1.0438 | +0.0013 (−0.0027, +0.0053) | no |
+| E1 | pre | 2,208 | 1.0461 | +0.0014 (−0.0006, +0.0034) | no |
+| E1 | close | 2,208 | 1.0453 | +0.0013 (−0.0003, +0.0029) | no |
+| E2 | pre | 2,055 | 1.0146 | −0.0017 (−0.0036, +0.0002) | no |
+| E2 | close | 2,056 | 1.0104 | −0.0008 (−0.0020, +0.0005) | no |
+
+`market-dc-country-v1`, not tested, gives the same picture: −0.0015 (−0.0034, +0.0002) for E2 at `pre`, every interval holding 0. Without `pre_timing_uncertain` matches (pre only): D2 −0.0001, E1 +0.0011, E2 −0.0016 (−0.0035, +0.0004). No conclusion changes. On development the blends are worse than the market in every league and horizon, 0.001 to 0.004, the interval clear of 0 in four of six rows.
+
+Where E2's small gain comes from: the fitted weight on Elo-country is negative in E1 and E2 in every season from 2017/18 (−0.04 to −0.12 at `pre`), so the blend moves away from our model where it disagrees with the market. What it keeps is a recalibration of the market: in E2 `a` is 1.13 to 1.20 at `pre` (the market is too cautious), in D2 `c_draw` about +0.07 (it underrates draws). The same recalibration in E0 and D1 did not survive out of sample; here it comes close in E2 but does not pass.
+
+### Margin: is the market thinner, and do costs eat it?
+
+Mean bookmaker margin per match, validation, `pre`:
+
+| Bookmaker | E0 | D1 | E1 | E2 | D2 |
+|---|---|---|---|---|---|
+| bet365 | 5.4% | 5.4% | 5.3% | 5.0% | 6.0% |
+| Pinnacle | 2.7% | 2.8% | 3.0% | 3.8% | 3.2% |
+| William Hill | 5.6% | 5.9% | 6.3% | 7.4% | 7.6% |
+| Interwetten | 5.2% | 5.2% | 6.6% | 9.3% | 5.9% |
+
+Thinner, a little: the sharp bookmaker (Pinnacle) and the soft ones charge 0.3 to 4 points more in the lower leagues, while about as many bookmakers, six, price each match (`docs/data-sources.md`). But bet365, the executable bookmaker, charges the same 5 to 6% as in E0 and D1. With the 5.3% tax a bet costs about 10% of the stake. The best point estimate, 0.0017 in log loss in E2, is a fraction of a percent in probability, far below 10 points of costs; and it is a recalibration of the market, not information from our models.
+
+### Verdict against the stop rule
+
+No league passes at either horizon: every 99% interval holds 0; three of six point estimates are worse than the market, one equal. By the pre-registered stop rule the betting question (questions 2 to 4) is closed for good: no CLV or profit test, no paper trading. The project moves to EURO 2028 forecasting. No holdout run is made.

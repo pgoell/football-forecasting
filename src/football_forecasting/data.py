@@ -55,6 +55,14 @@ class Odds:
     probs: tuple[float, float, float]  # devigged by normalization
 
 
+def leagues(warehouse: Path = WAREHOUSE) -> dict[str, tuple[str, int]]:
+    """League code to (country, tier), tier 1 the top league (dbt/seeds/leagues.csv)."""
+    con = duckdb.connect(str(warehouse), read_only=True)
+    rows = con.execute("select league, country, tier from leagues").fetchall()
+    con.close()
+    return {league: (country, tier) for league, country, tier in rows}
+
+
 def load(warehouse: Path = WAREHOUSE) -> tuple[list[Match], dict[str, list[Odds]]]:
     """Every match before the holdout, and its odds by match_id."""
     con = duckdb.connect(str(warehouse), read_only=True)

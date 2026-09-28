@@ -1,4 +1,12 @@
 seeds:
+  - name: leagues
+    description: >
+      The leagues downloaded and modeled; tier within the country (1 = top), and
+      the matches a full season has.
+    columns:
+      - name: league
+        data_tests: [unique, not_null]
+
   - name: bookmakers
     description: Football-Data bookmaker codes.
     columns:

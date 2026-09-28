@@ -11,7 +11,7 @@ Status per fact:
 ## Reproduce the data
 
 ```sh
-mise run data:download            # 54 CSVs into data/raw/football-data/
+mise run data:download            # 135 CSVs into data/raw/football-data/
 mise run data:download:understat  # 26 JSON files into data/raw/understat/
 git diff dbt/seeds/football_data_files.csv dbt/seeds/understat_files.csv
 mise run dbt:build
@@ -23,7 +23,7 @@ The download stores each file as UTF-8 with Unix line endings. D1 2000/01, D1 20
 
 ## Football-Data
 
-Site: <https://www.football-data.co.uk>. Files: `https://www.football-data.co.uk/mmz4281/<ssss>/<E0|D1>.csv`, `ssss` = `2526` for 2025/26.
+Site: <https://www.football-data.co.uk>. Files: `https://www.football-data.co.uk/mmz4281/<ssss>/<league>.csv`, `ssss` = `2526` for 2025/26, league as in `dbt/seeds/leagues.csv`: E0, E1, E2, D1, D2 (the last three since 2026-09-28, for the thin-market experiment in `docs/experiment-spec.md`).
 
 ### Pre-match odds collection time (checked, tested for plausibility)
 
@@ -75,13 +75,45 @@ Source: <https://www.football-data.co.uk/data.php>, archived <https://web.archiv
 
 notes.txt says only "Time = Time of match kick off". The Bundesliga's most common Saturday time in the files is 14:30, which is its 15:30 German-time slot, so times are UK local time. Test: `kickoff_times_are_uk_time`.
 
+### D2, E1 and E2 (counted, tested)
+
+Downloaded 2026-09-28, 2000/01 to 2026/27. Every finished season has 306 D2 or 552 E1 and E2 matches, except E2 2019/20 with 400: League One stopped in March 2020 and Bury, expelled before the season, played none. Test: `full_seasons_have_all_matches`, expected counts in `dbt/seeds/leagues.csv`. Team names match across leagues of a country: from 2001/02 to 2022/23 every E0, E1 and D1 team was in a covered league the season before, and E2 and D2 gain 2 to 5 teams a season from below.
+
+Five bet365 pre-match rows (E1 Blackpool 27/04/2013, Brentford 02/02/2019; E2 Sheffield United 28/03/2015, Portsmouth 19/02/2019, Sunderland 05/12/2020) carry a home price of 0; `stg_football_data__odds` drops every row with a price of 1 or less (none in E0 or D1). Betfair Exchange pre-match prices in D2 and E2 (2024/25 onward, holdout and later) include margins up to 180%, likely stale exchange quotes; not traced, and outside the seasons the backtest loads.
+
+Odds coverage, reliable non-aggregate bookmakers per match (median, and the lowest in the season at `pre`), and the median bookmaker margin at `pre`, averaged over matches. E0 and D1 for comparison. Seasons up to 2022/23; the holdout was not counted.
+
+| League | Seasons | `pre` bookmakers, median (lowest) | `close` bookmakers, median | `pre` margin |
+|---|---|---|---|---|
+| D2 | 2000/01 to 2004/05 | 3 to 6 (1) | none | 11.7% to 14.0% |
+| D2 | 2005/06 to 2011/12 | 8 to 10 (6) | none | 8.7% to 11.6% |
+| D2 | 2012/13 to 2018/19 | 6 to 10 (4) | 1 (Pinnacle) | 6.3% to 7.9% |
+| D2 | 2019/20 to 2022/23 | 6 (1) | 6 | 5.9% to 6.3% |
+| E1 | 2000/01 to 2004/05 | 5 to 7 (3) | none | 11.5% to 12.6% |
+| E1 | 2005/06 to 2011/12 | 9 to 10 (8) | none | 7.3% to 11.1% |
+| E1 | 2012/13 to 2018/19 | 6 to 10 (3) | 1 (Pinnacle) | 4.2% to 6.7% |
+| E1 | 2019/20 to 2022/23 | 6 (5) | 6 | 5.2% to 6.3% |
+| E2 | 2000/01 to 2004/05 | 5 to 7 (3) | none | 11.6% to 12.3% |
+| E2 | 2005/06 to 2011/12 | 9 to 10 (7) | none | 7.4% to 11.2% |
+| E2 | 2012/13 to 2018/19 | 6 to 10 (5) | 1 (Pinnacle) | 5.3% to 6.6% |
+| E2 | 2019/20 to 2022/23 | 6 (3) | 6 | 5.5% to 7.0% |
+| E0, D1 | 2019/20 to 2022/23 | 6 (6) | 6 | 5.0% to 5.5% |
+
+Flagged, too few bookmakers for a consensus (a median under 4, or matches priced by one or two):
+
+- D2 2000/01 and 2001/02 at `pre` (median 3 and 4, some matches one bookmaker): warm-up, never scored
+- every league at `close`, 2012/13 to 2018/19: Pinnacle alone, as in E0 and D1
+- single matches: D2 2020/21 has one match with one bookmaker at `pre`, E2 2019/20 and E1 2018/19 matches with three
+
+In the validation seasons the lower leagues have as many bookmakers as E0 and D1 (six at both horizons); the market is thinner in money traded, not in the count of prices, and its margin is about one point higher. The experiment keeps every flagged season (docs/experiment-spec.md).
+
 ### Shots and shots on target (tested)
 
 > "HS = Home Team Shots / AS = Away Team Shots / HST = Home Team Shots on Target / AST = Away Team Shots on Target"
 
 Source: <https://www.football-data.co.uk/notes.txt> (four lines, joined here), archived <https://web.archive.org/web/20260928135540/https://football-data.co.uk/notes.txt>. The same file does not say who counts shots or by what definition since 2002/03 (**unverified**).
 
-Coverage in our files, counted: every E0 season from 2000/01; D1 has no shots in 2002/03 and no shots on target from 2002/03 to 2005/06. D1 Union Berlin v Bochum on 14/12/2024, an awarded result, has none. Tests: `shots_coverage` (each season has them for every match or none, gaps as listed), `shots_on_target_within_shots` (warns: 3 E0 rows from the source have more shots on target than shots).
+Coverage in our E0 and D1 files, counted (D2, E1 and E2 not checked; no model uses their shots): every E0 season from 2000/01; D1 has no shots in 2002/03 and no shots on target from 2002/03 to 2005/06. D1 Union Berlin v Bochum on 14/12/2024, an awarded result, has none. Tests: `shots_coverage` (each season has them for every match or none, gaps as listed), `shots_on_target_within_shots` (warns: 3 E0 rows from the source have more shots on target than shots).
 
 Shots count as known with the result (`result_at`).
 

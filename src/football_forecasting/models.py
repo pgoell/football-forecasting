@@ -21,7 +21,7 @@ OUTCOMES = ("H", "D", "A")
 
 class Model(Protocol):
     version: str
-    params: dict[str, float]
+    params: dict[str, float | str]
 
     def observe(self, match: Match) -> None: ...
 
@@ -36,7 +36,7 @@ class Naive:
     version = "naive-v1"
 
     def __init__(self) -> None:
-        self.params: dict[str, float] = {}
+        self.params: dict[str, float | str] = {}
         self.counts: dict[tuple[str, str], Counter[str]] = defaultdict(Counter)
 
     def observe(self, match: Match) -> None:
@@ -62,7 +62,7 @@ class MarketConsensus:
     version = "market-consensus-v1"
 
     def __init__(self) -> None:
-        self.params: dict[str, float] = {}
+        self.params: dict[str, float | str] = {}
 
     def observe(self, match: Match) -> None:
         pass
@@ -96,7 +96,7 @@ class Elo:
         self.k = k
         self.home_advantage = home_advantage
         self.promoted_rating = promoted_rating
-        self.params: dict[str, float] = {
+        self.params: dict[str, float | str] = {
             "k": k,
             "home_advantage": home_advantage,
             "promoted_rating": promoted_rating,
@@ -184,7 +184,7 @@ class Poisson:
     ) -> None:
         self.promoted = (promoted_attack, promoted_defence)
         self.sd = sd
-        self.params: dict[str, float] = {
+        self.params: dict[str, float | str] = {
             "seasons": 3,
             "xi": self.xi,
             "promoted_attack": promoted_attack,
@@ -408,3 +408,245 @@ def score_probs(mu: float, nu: float, rho: float, cap: int = 10) -> Probs:
     grid[:2, :2] *= np.clip(tau(home_goals, away_goals, mu, nu, rho)[0], 0, None)
     grid /= grid.sum()
     return (float(np.tril(grid, -1).sum()), float(np.trace(grid)), float(np.triu(grid, 1).sum()))
+
+
+class EloCountry(Elo):
+    """elo-v1 with one change: a team that moves between covered leagues of one
+    country keeps its rating. Ratings are on one scale per country.
+
+    A team new to the country's covered leagues (from below, not in any of them
+    the season before) starts at the mean rating of the league it enters, taken
+    over that league's teams of the season before, minus 100: the elo-v1 gap
+    between promoted_rating (1400) and the league average (1500). In a league's
+    first season every team starts at 1500 less 100 per tier below the top, the
+    same gap per step down; the warm-up seasons then let the levels settle."""
+
+    version = "elo-country-v1"
+
+    def __init__(self, leagues: dict[str, tuple[str, int]]) -> None:
+        super().__init__()
+        self.leagues = leagues
+        self.params["new_team"] = "league mean - 100"
+        self.params["first_season"] = "1500 - 100 per tier"
+
+    def rating(self, fixture: Fixture, team: str) -> float:
+        league, season = fixture.league, fixture.season
+        country, tier = self.leagues[league]
+        if team not in self.teams[league, season]:
+            earlier = [s for (lg, s) in self.teams if lg == league and s < season]
+            before = [s for (lg, s) in self.teams if self.leagues[lg][0] == country and s < season]
+            last = max(before, default="")
+            covered = any(
+                team in self.teams.get((lg, last), ())
+                for lg in self.leagues
+                if self.leagues[lg][0] == country
+            )
+            if not earlier:
+                self.ratings.setdefault((country, team), 1500.0 - 100 * (tier - 1))
+            elif not covered:
+                previous = [self.ratings[country, t] for t in self.teams[league, max(earlier)]]
+                self.ratings[country, team] = sum(previous) / len(previous) - 100
+            self.teams[league, season].add(team)
+        return self.ratings[country, team]
+
+    def observe(self, match: Match) -> None:
+        fixture, result = match.fixture, match.result
+        country = self.leagues[fixture.league][0]
+        d = self.difference(fixture)
+        change = self.k * ({"H": 1.0, "D": 0.5, "A": 0.0}[result] - 1 / (1 + 10 ** (-d / 400)))
+        self.ratings[country, fixture.home_team] += change
+        self.ratings[country, fixture.away_team] -= change
+        self.history.append((d, OUTCOMES.index(result)))
+
+
+class DixonColesCountry(DixonColes):
+    """dixon-coles-v1 fitted jointly on all covered leagues of a country, so a team
+    that moves between them keeps its strengths: its matches in both leagues fit
+    one attack and one defence.
+
+        log(home rate) = mean + home[league] + attack[home team] + defence[away team]
+
+    home and rho per league, as dixon-coles-v1 fits them per league; one mean.
+    The penalty pulls each team toward its league's level (a free attack and
+    defence level per league, 0 in the top league) instead of toward 0, so the
+    penalty does not pull lower-league teams up; the teams that moved fix the
+    gaps between the levels. A team from below the covered leagues (in none of
+    them the season before) gets the promoted prior on top of its league's
+    level. Its league is the one of its latest season in the window. Same window
+    (current and two previous seasons), xi, prior and sd as dixon-coles-v1."""
+
+    version = "dixon-coles-country-v1"
+
+    def __init__(self, leagues: dict[str, tuple[str, int]]) -> None:
+        super().__init__()
+        self.leagues = leagues
+        self.params["fit"] = "per country"
+        # country -> (season, league, home, away, home goals, away goals, result_at in days)
+        self.rows: dict[str, list[tuple[str, str, str, str, int, int, float]]] = defaultdict(list)
+        self.country_fits: dict[str, tuple] = {}
+
+    def observe(self, match: Match) -> None:
+        f = match.fixture
+        self.rows[self.leagues[f.league][0]].append(
+            (
+                f.season,
+                f.league,
+                f.home_team,
+                f.away_team,
+                *match.goals,
+                match.result_at.timestamp() / 86400,
+            )
+        )
+        self.teams[f.league, f.season] |= {f.home_team, f.away_team}
+
+    def from_below(self, country: str, season: str, team: str) -> bool:
+        """True if the country's covered leagues had a season before and the team was in none."""
+        ours = [lg for lg in self.leagues if self.leagues[lg][0] == country]
+        before = [s for (lg, s) in self.teams if lg in ours and s < season]
+        return bool(before) and not any(
+            team in self.teams.get((lg, max(before)), ()) for lg in ours
+        )
+
+    def fit_country(self, country: str, season: str, as_of: datetime):
+        rows = self.rows[country]
+        cached = self.country_fits.get(country)
+        if cached and cached[:2] == (len(rows), season):
+            return cached[2:]
+        ours = sorted(
+            (lg for lg in self.leagues if self.leagues[lg][0] == country),
+            key=lambda lg: self.leagues[lg][1],
+        )
+        seasons = sorted({s for (lg, s) in self.teams if lg in ours and s < season})[-2:]
+        window = [r for r in rows if r[0] in seasons or r[0] == season]
+        latest: dict[
+            str, tuple[str, str]
+        ] = {}  # team -> (season, league), its latest in the window
+        for r in window:
+            for t in r[2:4]:
+                latest[t] = max(latest.get(t, ("", "")), (r[0], r[1]))
+        teams = {t: i for i, t in enumerate(sorted(latest))}
+        league_of = np.array([ours.index(latest[t][1]) for t in teams])
+        prior = np.array(
+            [
+                self.promoted if self.from_below(country, latest[t][0], t) else (0.0, 0.0)
+                for t in teams
+            ]
+        ).reshape(-1, 2)
+        days = as_of.timestamp() / 86400
+        params = fit_goals_country(
+            np.array([teams[r[2]] for r in window]),
+            np.array([teams[r[3]] for r in window]),
+            np.array([ours.index(r[1]) for r in window]),
+            np.array([r[4] for r in window]),
+            np.array([r[5] for r in window]),
+            np.exp(-self.xi * (days - np.array([r[6] for r in window]))),
+            league_of,
+            prior,
+            len(ours),
+            self.sd,
+        )
+        self.country_fits[country] = (len(rows), season, ours, teams, params)
+        return ours, teams, params
+
+    def predict(
+        self, fixture: Fixture, horizon: str, as_of: datetime, odds: list[Odds]
+    ) -> Probs | None:
+        country = self.leagues[fixture.league][0]
+        if not self.rows[country]:
+            return None
+        ours, teams, params = self.fit_country(country, fixture.season, as_of)
+        k, n = len(ours), len(teams)
+        lg = ours.index(fixture.league)
+        mean, home, rho = params[0], params[1 + lg], params[1 + k + lg]
+        # attack and defence level per league, 0 for the top one
+        levels = np.stack(
+            [
+                np.concatenate([[0.0], params[1 + 2 * k : 3 * k]]),
+                np.concatenate([[0.0], params[3 * k : 4 * k - 1]]),
+            ],
+            axis=1,
+        )
+        strengths = params[4 * k - 1 :]
+
+        def strength(team: str) -> tuple[float, float]:
+            if team in teams:
+                return strengths[teams[team]], strengths[n + teams[team]]
+            # no match in the window: its target, its league's level plus any prior
+            prior = self.promoted if self.from_below(country, fixture.season, team) else (0.0, 0.0)
+            return levels[lg, 0] + prior[0], levels[lg, 1] + prior[1]
+
+        home_attack, home_defence = strength(fixture.home_team)
+        away_attack, away_defence = strength(fixture.away_team)
+        return score_probs(
+            math.exp(mean + home + home_attack + away_defence),
+            math.exp(mean + away_attack + home_defence),
+            rho,
+        )
+
+
+def fit_goals_country(
+    home: np.ndarray,
+    away: np.ndarray,
+    league: np.ndarray,
+    home_goals: np.ndarray,
+    away_goals: np.ndarray,
+    weights: np.ndarray,
+    team_league: np.ndarray,
+    prior: np.ndarray,
+    k: int,
+    sd: float,
+) -> np.ndarray:
+    """fit_goals across k leagues, league 0 the top one. Returns (mean, home[k], rho[k],
+    attack level[k-1], defence level[k-1], attack..., defence...). Team i is pulled
+    toward level[team_league[i]] + prior[i] (level 0 for the top league)."""
+    n = len(team_league)
+    lvl = 1 + 2 * k  # index of the first attack level
+
+    def unpack(params: np.ndarray):
+        mean = params[0]
+        home_adv, rho = params[1 : 1 + k], params[1 + k : lvl]
+        la = np.concatenate([[0.0], params[lvl : lvl + k - 1]])
+        ld = np.concatenate([[0.0], params[lvl + k - 1 : lvl + 2 * k - 2]])
+        s = lvl + 2 * k - 2
+        return mean, home_adv, rho, la, ld, params[s : s + n], params[s + n :]
+
+    def loss(params: np.ndarray) -> tuple[float, np.ndarray]:
+        mean, home_adv, rho, la, ld, attack, defence = unpack(params)
+        log_mu = mean + home_adv[league] + attack[home] + defence[away]
+        log_nu = mean + attack[away] + defence[home]
+        mu, nu = np.exp(log_mu), np.exp(log_nu)
+        r = rho[league]
+        t, t_mu, t_nu, t_rho = tau(home_goals, away_goals, mu, nu, r)
+        ll = home_goals * log_mu - mu + away_goals * log_nu - nu + np.log(t)
+        wm = weights * (home_goals - mu + t_mu / t)
+        wn = weights * (away_goals - nu + t_nu / t)
+        off_a = attack - la[team_league] - prior[:, 0]
+        off_d = defence - ld[team_league] - prior[:, 1]
+        grad_la = -np.bincount(team_league, off_a, k)[1:] / sd**2
+        grad_ld = -np.bincount(team_league, off_d, k)[1:] / sd**2
+        grad = np.concatenate(
+            [
+                [-(wm.sum() + wn.sum())],
+                -np.bincount(league, wm, k),
+                -np.bincount(league, weights * t_rho / t, k),
+                grad_la,
+                grad_ld,
+                -(np.bincount(home, wm, n) + np.bincount(away, wn, n)) + off_a / sd**2,
+                -(np.bincount(away, wm, n) + np.bincount(home, wn, n)) + off_d / sd**2,
+            ]
+        )
+        penalty = ((off_a**2).sum() + (off_d**2).sum()) / (2 * sd**2)
+        return -(weights * ll).sum() + penalty, grad
+
+    x0 = np.concatenate(
+        [
+            [math.log(max(home_goals.mean(), 0.1))],
+            np.full(k, 0.25),
+            np.zeros(k),
+            np.zeros(2 * k - 2),
+            prior[:, 0],
+            prior[:, 1],
+        ]
+    )
+    bounds = [(None, None)] * (1 + k) + [(-0.3, 0.3)] * k + [(None, None)] * (2 * k - 2 + 2 * n)
+    return minimize(loss, x0, jac=True, method="L-BFGS-B", bounds=bounds).x
