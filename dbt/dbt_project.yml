@@ -1,0 +1,14 @@
+name: football_forecasting
+version: "0.1.0"
+profile: football_forecasting
+
+model-paths: ["models"]
+test-paths: ["tests"]
+
+vars:
+  raw_dir: ../data/raw
+
+models:
+  football_forecasting:
+    staging:
+      +materialized: table  # a view would resolve the relative CSV path from wherever it is queried

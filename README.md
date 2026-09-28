@@ -17,6 +17,13 @@ mise run test
 mise run lint     # ruff + ty
 ```
 
+## Data
+
+```sh
+mise run data:download  # Football-Data CSVs into data/raw/
+mise run dbt:build      # dbt models and tests into data/warehouse.duckdb
+```
+
 ## Phases
 
 0. Define the experiment
