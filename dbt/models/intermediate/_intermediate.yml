@@ -50,3 +50,5 @@ models:
     columns:
       - name: match_id
         data_tests: [unique, not_null]
+      - name: elo_match_date
+        description: date of the eloratings.net match; one or two days off match_date for 74 matches
