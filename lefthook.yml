@@ -10,9 +10,16 @@ pre-commit:
       glob: "*.py"
       run: uv run ruff check {staged_files}
 
+commit-msg:
+  jobs:
+    - name: conventional-commit
+      run: mise exec -- cog verify --file {1}
+
 pre-push:
   jobs:
     - name: lint
       run: mise run lint
     - name: test
       run: mise run test
+    - name: check-commits
+      run: mise run check-commits

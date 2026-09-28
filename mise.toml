@@ -1,9 +1,10 @@
 # mise.toml: toolchain pins and task definitions
 
 [tools]
-python   = "3.13"
-uv       = "latest"
-lefthook = "latest"
+python    = "3.13"
+uv        = "latest"
+lefthook  = "latest"
+cocogitto = "latest"
 
 # ─── Bootstrap ──────────────────────────────────────────────────────────────
 
@@ -19,6 +20,12 @@ run = [
 [tasks.test]
 description = "Run tests"
 run = "uv run pytest"
+
+# ─── Commits ────────────────────────────────────────────────────────────────
+
+[tasks.check-commits]
+description = "Verify commits since origin/master are conventional"
+run = "cog check origin/master..HEAD"
 
 # ─── Lint & format ──────────────────────────────────────────────────────────
 
