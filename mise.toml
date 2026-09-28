@@ -63,6 +63,15 @@ run = "uv run python -m football_forecasting.tournament_validation"
 description = "HOLDOUT RUN, once: forecast and score national-elo-v1 on WC 2026 (104 finals matches), match and rounds metrics, bootstrap CIs, the real success criteria (docs/tournament-spec.md)"
 run = "uv run python -m football_forecasting.tournament_holdout"
 
+[tasks."euro2028:refresh"]
+description = "Re-download martj42 and eloratings.net, rebuild dbt, log a fresh EURO 2028 ratings snapshot. eloratings.net rewrites past years too (docs/data-sources.md, eloratings.net): after this, check `git diff dbt/seeds/eloratings_files.csv` and either restore data/raw/eloratings or commit the new record with a docs/experiment-log.md entry before trusting a changed forecast"
+run = [
+  "uv run scripts/download_international_results.py",
+  "uv run scripts/download_eloratings.py --last \"$(date +%Y)\"",
+  "mise run dbt:build",
+  "uv run python -m football_forecasting.euro2028",
+]
+
 [tasks.dashboard]
 description = "Serve the backtest dashboard on localhost:8501"
 run = "uv run streamlit run src/football_forecasting/dashboard.py --server.address 127.0.0.1 --server.headless true"
