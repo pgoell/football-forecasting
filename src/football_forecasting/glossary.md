@@ -69,6 +69,23 @@ A rating per team, the method first used for chess players.
 
 K and home advantage were set by hand, not tuned. Elo knows nothing about injuries, line-ups or transfers; it learns only from results.
 
+### poisson
+
+A forecast of the score, not only of the result.
+
+- Every team gets an **attack** strength (how many goals it scores) and a **defence** strength (how many it lets in). The expected goals of the home team come from its attack, the away team's defence, a league average and a home advantage; the away team's the same way, without the home advantage.
+- Goals of each team are drawn from a Poisson distribution, the usual law for counts of rare events. That gives a chance for every score from 0-0 to 10-10; adding up the scores with more home goals gives the home win chance, and so on.
+- **Fitted** per league on the current and the two seasons before, all matches weighted the same, and refitted whenever new results are in.
+- **Holding strengths back.** A small penalty keeps each strength near the league average unless the results say otherwise, so a team with few matches does not get an extreme rating.
+- **Promoted teams** are held near the level of relegated teams instead: attack −0.32 and defence +0.25 (about 27% fewer goals scored and 28% more let in than average), from the warm-up seasons.
+
+### dixon-coles
+
+The poisson model with two changes, after Dixon and Coles (1997).
+
+- **Recent matches count more.** A match's weight halves every year or so (decay 0.0065 per half week, the value from the paper, not tuned).
+- **Low scores.** Plain Poisson gets 0-0, 1-0, 0-1 and 1-1 slightly wrong. A fitted factor (rho) corrects those four scores, which mostly moves chance toward draws.
+
 ### market-consensus
 
 What the bookmakers think.

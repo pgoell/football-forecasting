@@ -31,7 +31,7 @@ from football_forecasting.data import (
     Odds,
     load,
 )
-from football_forecasting.models import Elo, MarketConsensus, Model, Naive
+from football_forecasting.models import DixonColes, Elo, MarketConsensus, Model, Naive, Poisson
 from football_forecasting.report import report
 
 HORIZONS = ("pre", "close")
@@ -72,7 +72,7 @@ def run(
     for as_of, kind, match_id, m, horizon in events:
         if kind == 1:
             for model in models:
-                model.observe(m.fixture, m.result)
+                model.observe(m)
             continue
         known = [o for o in odds.get(match_id, []) if o.available_at <= as_of]
         executable = next(
@@ -212,7 +212,7 @@ def save(
 
 def main() -> None:
     matches, odds = load()
-    models: list[Model] = [Naive(), MarketConsensus(), Elo()]
+    models: list[Model] = [Naive(), MarketConsensus(), Elo(), Poisson(), DixonColes()]
     predictions = run(models, matches, odds)
     seasons = sorted(m.fixture.season for m in matches)
     new = save(predictions, models, f"{seasons[0]}..{seasons[-1]}")
