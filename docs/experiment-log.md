@@ -481,3 +481,75 @@ Judged on the holdout (WC 2026); these readings are informational only, and vali
 **Reading.** national-elo-v1 again ties eloratings.net's own ratings almost exactly, on both matches (M2 would pass with room to spare) and rounds. Against naive it wins clearly on rounds (R1 would pass, the interval well clear of 0) but not as clearly on matches: the point estimate favors it by 0.064 in log loss, close to development's tournament-set gap (0.109), but 166 matches leave a wide enough interval that it still touches 0 (M1 would fail here, though M1 is a holdout criterion, not a validation one). The rounds calibration slope, 1.064 with a CI comfortably inside 0.7 to 1.3 and holding 1, is a second, independent check on the same simulator that the development log lost track of (development never simulated a bracket, since the model step ends at match probabilities): it says the Monte Carlo reach probabilities are not systematically over or under confident. Development already answered "yes to 1 against eloratings.net, same method"; this validation run does the same for question 2 ("are its probabilities of reaching each round calibrated, and better than a naive benchmark"): yes to both, on this evidence. national-elo-v1 is the model this project takes to the holdout.
 
 Stop, per the task: EURO 2020, WC 2022 and EURO 2024 only, scored once. The holdout (WC 2026) stays untouched until that run, which needs its own odds purchase for M3 and counts as the only other authorized look at validation-era data this spec allows before then.
+
+## 2026-09-28: national-elo-v1, HOLDOUT RUN (WC 2026)
+
+The one holdout run this spec allows (docs/tournament-spec.md, Rules against fooling ourselves: a second one needs a new tournament, EURO 2028). national-elo-v1 exactly as validated above (commit e4294ad): no change to the model, the simulator, the metrics or the bootstrap once any holdout number was seen. Period 2024-07-15 to 2026-07-19 (WC 2026 finals, 104 matches, 48 teams). No match after 2026-07-19 entered anything: `national_elo_backtest.run` took a new `through` argument for this run only, widened to 2026-07-20 and nowhere else.
+
+Before any score: the real group draw (5 December 2025) and the host country of every match were added to `tournament_formats.yaml` from Wikipedia and FIFA's own site (docs/data-sources.md, WC 2026 draw and venues). A bracket replay fed the real results through `standings()`, `bracket_slots()` and `walk()`: it reproduces the real champion (Spain, beating Argentina 1-0 in the final) and every real pairing exactly, with no fair-play override needed anywhere, unlike WC 2018 and EURO 2024. This replay checks the format only; no model or scoring choice rests on it, so it is not a second look at the holdout.
+
+Code (`src/football_forecasting/tournament_holdout.py`, `mise run tournament:holdout`), run once: forecasts WC 2026 with all three models (10,000 seeded runs each, stored immutably), then scores the 104 finals matches and the rounds against the real bracket, reusing `tournament_run.py` and `tournament_validation.py`'s machinery unchanged.
+
+### Match (104 finals matches)
+
+| model | log loss | RPS |
+|---|---|---|
+| national-elo-v1 | 0.9000 | 0.1638 |
+| naive-tournament-v1 | 1.0781 | 0.2252 |
+| eloratings-v1 | 0.8915 | 0.1624 |
+
+Paired differences in log loss, national-elo-v1 minus each benchmark, 95% bootstrap interval over 10,000 draws blocked by match day:
+
+| minus | mean | 95% CI |
+|---|---|---|
+| naive-tournament-v1 | -0.1781 | (-0.2576, -0.0901) |
+| eloratings-v1 | +0.0086 | (-0.0102, +0.0275) |
+
+Calibration (5 bins, national-elo-v1): the two best-filled cells sit close to the diagonal (draw bin 1, 77 matches, 27.7% forecast against 29.9% observed; home bin 2, 26 matches, 49.0% against 57.7%), and home bin 3 tracks too (23 matches, 71.0% against 73.9%). Thinner cells drift more: home bin 1 (32 matches, 30.1% forecast, 18.8% observed) and away bin 0 (38 matches, its biggest, 10.9% forecast, 0% observed) both read low against their forecast; away bin 2 (15 matches, 47.8% forecast, 73.3% observed) reads high. 104 matches split three ways across 5 bins leaves most cells this small, so no one bin should be read alone.
+
+### Rounds (round of 32 to the final: 48 teams, 720 team-round rows, no bracket credit for reaching the group)
+
+| model | Brier | log loss (clipped at 1/20,000) |
+|---|---|---|
+| national-elo-v1 | 0.0895 | 0.2788 |
+| naive-tournament-v1 | 0.1395 | 0.4359 |
+| eloratings-v1 | 0.0918 | 0.2850 |
+
+Paired differences in Brier, national-elo-v1 minus each benchmark, 95% bootstrap interval over 10,000 draws blocked by team within tournament:
+
+| minus | mean | 95% CI |
+|---|---|---|
+| naive-tournament-v1 | -0.0500 | (-0.0820, -0.0229) |
+| eloratings-v1 | -0.0023 | (-0.0080, +0.0030) |
+
+Calibration (5 bins, national-elo-v1) tracks the diagonal at the bottom, its best-filled bin (bin 0, 140 rows, 5.1% forecast against 1.4% observed), and drifts wider going up (bin 1, 35 rows, 30.1% against 37.1%; bin 2, 23 rows, 48.7% against 47.8%; bin 3, 23 rows, 67.8% against 78.3%; bin 4, 19 rows, 92.3% against 94.7%). Calibration slope: 1.387, 95% CI (1.102, 1.874), sitting above 1 throughout: on this one tournament's rounds, the model undersells its own confidence.
+
+### Winner (reported only, no pass or fail)
+
+| model | tournament | champion's own log loss | Brier, all teams |
+|---|---|---|---|
+| national-elo-v1 | WC 2026 (Spain) | 1.2816 | 0.0125 |
+| naive-tournament-v1 | WC 2026 | 3.9271 | 0.0204 |
+| eloratings-v1 | WC 2026 | 1.2431 | 0.0118 |
+
+naive-tournament-v1's champion log loss sits close to the uniform value for a 48-team field (-ln(1/48) = 3.871), the same wiring check as validation.
+
+### Success criteria (docs/tournament-spec.md)
+
+| # | Pass if | Reading | Verdict |
+|---|---|---|---|
+| M1 | model log loss below naive, CI excludes 0 | mean -0.1781, 95% CI (-0.2576, -0.0901) | **PASS** |
+| M2 | model minus eloratings.net log loss, upper bound below 0.02 | mean +0.0086, 95% CI (-0.0102, +0.0275) | **FAIL** |
+| R1 | rounds Brier below naive, CI excludes 0 | mean -0.0500, 95% CI (-0.0820, -0.0229) | **PASS** |
+| R2 | calibration slope on rounds: CI holds 1, point from 0.7 to 1.3 | slope 1.387, 95% CI (1.102, 1.874) | **FAIL** |
+| M3 | model minus market log loss, upper bound below 0.04 | no odds bought for this run | **not run** |
+
+**Verdict (Decisions that follow).** M1 and R1 pass, clearly: the model beats naive on both matches and rounds, so nothing here calls for fixing the model or the simulator first. M2 fails: on these 104 matches national-elo-v1 is a touch worse than eloratings.net's own published ratings, the first time the two have not tied (development: -0.0005; validation: -0.0001; holdout: +0.0086). The matching rule is plain: "Pass M1, fail M2: our Elo is worse than a free published one; the dashboard uses eloratings.net ratings through our simulator." **The dashboard moves to eloratings-v1.**
+
+R2 also fails, on its own terms: the slope is 1.387 (outside 0.7 to 1.3) with a 95% CI, 1.102 to 1.874, that sits entirely above 1, so the rounds and winner probabilities from national-elo-v1's 10,000 runs read underconfident here, unlike validation's well-centered 1.064. One tournament's round data (48 teams, one bracket) is small and correlated: a handful of round-of-32 upsets or non-upsets can move the slope a long way, and this is the only R2 reading this spec ever takes on a single tournament. "Fail R2 with M passing: check the simulator (formats, tie-breakers, extra time) against past brackets before trusting round probabilities" was already done before scoring: the bracket replay above reproduces the real result exactly, so the format and bracket code are not the cause; the slope failure sits in the match probabilities or their Monte Carlo propagation, not the bracket mechanics. Since M2 already moves the dashboard to eloratings-v1, its round forecasts (already bound to the same simulator in `tournament_run.py`) move with it; R2 here was only computed for national-elo-v1, so eloratings-v1's own round calibration is not yet known and stays a caution on any round or winner probability the dashboard publishes, whichever ratings feed it.
+
+M3 (model vs. market) is not run: no odds were bought for this run. To be run later on these stored holdout predictions, no model change.
+
+**Reading.** Question 1 of the tournament spec ("does our model predict 90-minute H/D/A as well as the eloratings.net ratings") gets a narrower answer on the holdout than on development or validation: close, but for the first time not tied, and the free published ratings edge it out. Question 2 ("are its probabilities of reaching each round calibrated, and better than naive") splits: clearly better than naive (R1), but not well calibrated on this one tournament (R2). Both point the same way: publish the dashboard on eloratings.net's ratings through this simulator, not national-elo-v1's own.
+
+Stop, per the task: WC 2026 only, scored once. A second holdout run counts as a new experiment and needs a new tournament, which means EURO 2028.

@@ -149,3 +149,4 @@ The samples are small: 104 holdout matches and 166 validation matches, against 1
 
 - 2026-09-28: first draft
 - 2026-09-28: frozen; the owner asked for the open decisions to be settled with the proposed values, and the bounds set at 0.02, 0.04 and 0.7 to 1.3
+- 2026-09-28: holdout run (WC 2026) scored, once, per this spec; no rule change (docs/experiment-log.md)
