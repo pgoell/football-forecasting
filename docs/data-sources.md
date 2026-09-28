@@ -13,7 +13,9 @@ Status per fact:
 ```sh
 mise run data:download            # 135 CSVs into data/raw/football-data/
 mise run data:download:understat  # 26 JSON files into data/raw/understat/
-git diff dbt/seeds/football_data_files.csv dbt/seeds/understat_files.csv
+mise run data:download:international-results  # 4 CSVs into data/raw/international-results/
+mise run data:download:eloratings  # 26 TSV files into data/raw/eloratings/
+git diff dbt/seeds/*_files.csv
 mise run dbt:build
 ```
 
@@ -195,7 +197,9 @@ Source: <https://www.sports-reference.com/termsofuse.html> (FBref's owner, "Last
 
 ## International football (for docs/tournament-spec.md)
 
-Checked on 2026-09-28, before the tournament spec is frozen. No international data is stored yet.
+Checked on 2026-09-28, before the tournament spec was frozen; the data was stored the same day, after the freeze.
+
+Holdout: the checks below looked only at matches up to 2024-07-14. Tests that also cover later matches show those only as a count (`macros/holdout_silent.sql`), so no WC 2026 result is printed.
 
 ### martj42/international_results: licence and score rules (checked)
 
@@ -205,11 +209,73 @@ Licence: CC0 1.0 Universal, read in the repo's `LICENSE` file (<https://github.c
 
 > "For home and away teams the *current* name of the team has been used."
 
-Source: the repo's README (<https://github.com/martj42/international_results/blob/master/README.md>, archived <https://web.archive.org/web/20260928180505/https://github.com/martj42/international_results/blob/master/README.md>). Files: `results.csv`, `goalscorers.csv`, `shootouts.csv`, `former_names.csv`. The header of `goalscorers.csv` has a `minute` column (`date,home_team,away_team,team,scorer,minute,own_goal,penalty`), so 90-minute scores can be derived; how it records stoppage time, and whether every tournament goal is listed, is not checked (**unverified**, to become a dbt test).
+Source: the repo's README (<https://github.com/martj42/international_results/blob/master/README.md>, archived <https://web.archive.org/web/20260928180505/https://github.com/martj42/international_results/blob/master/README.md>). Files: `results.csv`, `goalscorers.csv`, `shootouts.csv`, `former_names.csv`. The header of `goalscorers.csv` has a `minute` column (`date,home_team,away_team,team,scorer,minute,own_goal,penalty`), so 90-minute scores can be derived. How it records stoppage time and whether every finals goal is listed: see below.
+
+### martj42: download (tested)
+
+`scripts/download_international_results.py` fetches the four CSVs from `https://raw.githubusercontent.com/martj42/international_results/<commit>/<file>` at commit `394fe81893b062fbc2cf6257e988ac7cc4c039a1` (master on 2026-09-28, committed 2026-08-26; tree archived <https://web.archive.org/web/20260928183245/https://github.com/martj42/international_results/tree/394fe81893b062fbc2cf6257e988ac7cc4c039a1>). The files come UTF-8 with Unix line endings (stored bytes equal the bytes received). `dbt/seeds/international_results_files.csv` records them; test `international_results_files_match_recorded_version` (warns).
+
+`stg_international_results__matches.match_id` is date, home team and away team: before 2011 a home team played twice on one day 31 times (last: Chile v Northern Ireland and Chile v Israel, 2010-05-30), and Tahiti met New Caledonia twice on 1974-02-17, so the second of those gets `_2`.
+
+### martj42: stoppage time and the 90-minute score (checked, tested)
+
+`goalscorers.csv` gives minutes as whole numbers, or `NA` (254 goals, all before 1998). Stoppage time is folded into minute 45 or 90; extra time runs 91 to 120. Checked against two matches:
+
+| Match | Goals (Wikipedia) | `minute` in the file |
+|---|---|---|
+| Brazil v Costa Rica, WC 2018-06-22 | Coutinho 90+1, Neymar 90+7 | 90, 90 |
+| England v Slovakia, EURO 2024-06-30 | Schranz 25; Bellingham 90+5; Kane 91 (extra time) | 25, 90, 91 |
+
+Sources: <https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_Group_E> ("Coutinho {{goal|90+1}}", "Neymar {{goal|90+7}}"), archived <https://web.archive.org/web/20260928183155/https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_Group_E>; <https://en.wikipedia.org/wiki/UEFA_Euro_2024_knockout_stage> ("Bellingham {{goal|90+5}}", "Kane {{goal|91}}"), archived <https://web.archive.org/web/20260928182946/https://en.wikipedia.org/wiki/UEFA_Euro_2024_knockout_stage>. In WC and EURO finals up to EURO 2024, minute 45 holds 32 goals and 46 holds 6, minute 90 holds 111 and 91 holds 1.
+
+So the 90-minute score counts goals at minute 90 or before (`home_score_90`, `away_score_90`). A knockout match that went to extra time comes out level at 90, whoever won it. `own_goal` rows carry the team credited with the goal: the counts match the scores below. The 90-minute score is null unless `goals_complete`: every goal is listed, each with a minute.
+
+Tests:
+
+- `goals_after_90_only_in_level_matches`: in finals from 2006, a match with a goal after minute 90 is level at 90 (22 such matches to EURO 2024). The rule does not hold everywhere: 2003 to 2005 World Cup qualifiers put some stoppage goals at 91 to 95 (Northern Ireland v Austria, 2004-10-13, a goal at 93 with the match 2-3 at the time), and second legs such as France v Republic of Ireland, 2009-11-18, went to extra time while not level at 90. So `home_score_90` outside finals may be wrong for some qualifiers; the spec scores only finals
+- `finals_goals_listed` (warns): every finals goal from 2006 is listed with a minute. It passes: all 535 development and validation matches, and the holdout (count only). Outside finals, 2006-01-01 to 2024-07-14: 6,944 of 11,198 competitive matches and 598 of 6,007 friendlies are complete
+- `score_90_within_full_score`: no team has more goals at 90 minutes than at the end
+- `finals_match_counts`: WC 2006 to 2022 have 64 matches each, WC 2026 104, EURO 2008 and 2012 31, EURO 2016, 2020 and 2024 51. It passes. EURO 2020, played in 2021, has `edition` 2020
+
+### eloratings.net: files and column meanings (checked, tested)
+
+The site's page loads `scripts/ratings.js` (archived <https://web.archive.org/web/20260928182759/https://www.eloratings.net/scripts/ratings.js>), which reads a results file line by line:
+
+> "row.date = formatDate(fields[0], fields[1], fields[2]); row.match = formatMatch(fields[3], fields[4]); row.score = fields[5] + '<br/>' + fields[6]; row.tournament = formatTournament(fields[7], fields[8] || fields[3], ...); row.changes = formatChange(fields[9]); row.ratings = fields[10] + '<br/>' + fields[11]; row.moves = fields[12] + '<br/>' + fields[13]; row.ranks = fields[14] + '<br/>' + fields[15];"
+
+(function `pushMatchRow`, lines joined, trailing arguments cut). The same script loads `teams.tsv`, `en.teams.tsv` and `en.tournaments.tsv`. So a line of `<year>_results.tsv` (example archived <https://web.archive.org/web/20260928182802/https://www.eloratings.net/2006_results.tsv>) is:
+
+| Field | Meaning |
+|---|---|
+| 0 to 2 | year, month, day; day `00` once (August 2004, Saint Martin v Sint Eustatius), date unknown |
+| 3, 4 | team codes |
+| 5, 6 | score, extra time included, shootout excluded (France v Italy, WC final 2006-07-09: 1 1) |
+| 7 | tournament code (`en.tournaments.tsv`: `WC` World Cup, `EC` European Championship, `EQ` its qualifier, `F` friendly) |
+| 8 | country played in; blank when team 1 is at home |
+| 9 | rating points team 1 gained; team 2 lost as many |
+| 10, 11 | ratings **after** the match |
+| 12 to 15 | rank moves and ranks after the match (moves use the minus sign U+2212) |
+
+Fields 10 and 11 are post-match: for every team and pair of its matches in a row, 2004 to 2026, the rating after the first plus the change in the second equals the rating after the second; as pre-match ratings, 58 of 1,484 steps in 2006 fit. Test: `eloratings_ratings_are_post_match` (count only). So `stg_eloratings__matches` gives pre-match ratings as post minus change for team 1 and post plus change for team 2. The ratings carry across the year files.
+
+`en.teams.tsv` maps a code to names (first name used; archived <https://web.archive.org/web/20260928182830/https://www.eloratings.net/en.teams.tsv>). `teams.tsv` maps old codes to the current one (`YU RS`, `RM RS`, `MK NM`, `SZ SW`, `AN CW` and others; archived <https://web.archive.org/web/20260928182805/https://www.eloratings.net/teams.tsv>). The 2004 to 2026 files still use four old codes (RM Serbia and Montenegro, MK Macedonia, SZ Swaziland, AN Netherlands Antilles); staging turns them into the current code, as martj42 turns them into the current name.
+
+`scripts/download_eloratings.py` fetches the three lookups and `<year>_results.tsv` for 2004 to 2026 (EURO 2004 in warm-up, then every scored year), one request a second. They come UTF-8 with Unix line endings (stored bytes equal the bytes received). The site rewrites its files: `2006_results.tsv` had `Last-Modified` 2026-09-27. `dbt/seeds/eloratings_files.csv` records them; test `eloratings_files_match_recorded_version` (warns).
+
+### Team names (tested)
+
+`dbt/seeds/team_names.csv` gives each team one `team_id`, its martj42 name and its current eloratings.net code: 236 teams, every martj42 team since 2004 that eloratings.net rates. 226 match on the first eloratings name; 10 by hand (`Czech Republic` CZ Czechia, `Republic of Ireland` IE Ireland, `American Samoa` AS Eastern Samoa, `Macau` MO Macao, `Réunion` RE, `Saint Barthélemy` BL, `São Tomé and Príncipe` ST, `Timor-Leste` TL East Timor, `United States Virgin Islands` VI, `Vatican City` VA). Left out: 84 martj42 teams eloratings does not rate (Catalonia, Jersey, other non-FIFA sides), and 4 eloratings teams martj42 lacks (Saba, Sint Eustatius, Cocos and Christmas Islands). `odds_api_name` is empty until The Odds API data comes in.
+
+Tests:
+
+- `international_teams_mapped`: every WC and EURO finals match and every EURO qualifier from 2006 has both teams mapped and finds its eloratings.net match on the same date with the same team ids. All do, holdout included (count only), except Italy v Serbia, EURO 2012 qualifier, 2010-10-12: "The Italy v Serbia match was abandoned after six minutes due to rioting by Serbian fans. The UEFA Control and Disciplinary Body awarded the match as a 3–0 forfeit win to Italy." (<https://en.wikipedia.org/wiki/UEFA_Euro_2012_qualifying_Group_C>, archived <https://web.archive.org/web/20260928183022/https://en.wikipedia.org/wiki/UEFA_Euro_2012_qualifying_Group_C>). martj42 has it at 3-0 with no goals listed; eloratings.net leaves it out
+- `finals_scores_match_eloratings`: both sources give the same score for every finals match from 2006. They do
+
+`int_international_matches` joins the two: martj42 matches with eloratings.net pre-match ratings and score, turned to martj42's home and away. From 2006-01-01 to 2024-07-14, 10,642 of 11,198 competitive matches and 5,778 of 6,007 friendlies have eloratings ratings; the rest have an unmapped team or no eloratings match on the same date (not traced).
 
 ### eloratings.net (unverified terms)
 
-Files such as `https://www.eloratings.net/World.tsv` and `https://www.eloratings.net/<year>_results.tsv` answer without a key. No terms of use found: `/robots.txt` returns 404, and the about page loads its text by script, so it was not read. Column meanings of the `.tsv` files: not checked (**unverified**).
+Files such as `https://www.eloratings.net/World.tsv` and `https://www.eloratings.net/<year>_results.tsv` answer without a key. No terms of use found: `/robots.txt` returns 404, and the about page loads its text by script, so it was not read. Used for private research only, at one request a second (docs/tournament-spec.md). Column meanings: see above.
 
 ### The Odds API: internationals (checked)
 
