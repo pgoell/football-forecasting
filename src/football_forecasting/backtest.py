@@ -11,7 +11,11 @@ available_at <= the prediction time. Models get nothing else.
 
 import csv
 import hashlib
+import json
+import subprocess
 import tempfile
+import uuid
+from collections.abc import Sequence
 from dataclasses import astuple, dataclass
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +26,7 @@ from football_forecasting.data import (
     FIRST_DEVELOPMENT_SEASON,
     FIRST_HOLDOUT_SEASON,
     PREDICTIONS,
+    ROOT,
     Match,
     Odds,
     load,
@@ -49,7 +54,9 @@ class Prediction:
     odds_away: float | None
 
 
-def run(models: list[Model], matches: list[Match], odds: dict[str, list[Odds]]) -> list[Prediction]:
+def run(
+    models: Sequence[Model], matches: list[Match], odds: dict[str, list[Odds]]
+) -> list[Prediction]:
     """Predict every development and validation match at both horizons."""
     events: list[tuple[datetime, int, str, Match, str]] = []
     for m in matches:
@@ -95,12 +102,40 @@ def run(models: list[Model], matches: list[Match], odds: dict[str, list[Odds]]) 
     return predictions
 
 
-def save(predictions: list[Prediction], path: Path = PREDICTIONS) -> int:
-    """Append predictions not yet stored; return how many were new.
+def git_state() -> tuple[str, bool]:
+    """HEAD commit and whether the working tree has uncommitted changes."""
+    git = ["git", "-C", str(ROOT)]
+    sha = subprocess.run([*git, "rev-parse", "HEAD"], capture_output=True, text=True).stdout
+    status = subprocess.run([*git, "status", "--porcelain"], capture_output=True, text=True).stdout
+    return sha.strip(), bool(status.strip())
 
-    Stored predictions never change. A rerun that gives a different number for
-    a stored prediction fails: change the model's version instead."""
+
+def save(
+    predictions: list[Prediction], models: Sequence[Model], seasons: str, path: Path = PREDICTIONS
+) -> int:
+    """Record the run and append predictions not yet stored; return how many were new.
+
+    Stored predictions never change and keep the run_id of the run that first
+    stored them. A rerun that gives a different number for a stored prediction
+    fails: change the model's version instead. Every run gets a row per model in
+    `runs`, even when it stores nothing new."""
     con = duckdb.connect(str(path))
+    con.execute(
+        """
+        create table if not exists runs (
+            run_id varchar not null,
+            model_version varchar not null,
+            started_at timestamptz not null,
+            git_sha varchar not null,
+            git_dirty boolean not null,
+            params json not null,
+            seasons varchar not null,  -- first..last season the run saw
+            predictions integer not null,
+            new_predictions integer not null,
+            primary key (run_id, model_version)
+        )
+        """
+    )
     con.execute(
         """
         create table if not exists predictions (
@@ -115,7 +150,8 @@ def save(predictions: list[Prediction], path: Path = PREDICTIONS) -> int:
             odds_home double,
             odds_draw double,
             odds_away double,
-            stored_at timestamptz not null default current_timestamp
+            stored_at timestamptz not null default current_timestamp,
+            run_id varchar not null
         )
         """
     )
@@ -136,21 +172,51 @@ def save(predictions: list[Prediction], path: Path = PREDICTIONS) -> int:
     ).fetchone()
     if changed and changed[0]:
         raise ValueError(f"{changed[0]} stored predictions would change; bump the model version")
-    new = con.execute(
+    run_id = uuid.uuid4().hex[:12]
+    sha, dirty = git_state()
+    con.execute("begin")
+    con.execute(
         f"""
-        insert into predictions ({", ".join(columns)})
-        select {", ".join(columns)} from incoming
+        insert into predictions ({", ".join(columns)}, run_id)
+        select {", ".join(columns)}, $run_id from incoming
         where prediction_id not in (select prediction_id from predictions)
-        """
+        """,
+        {"run_id": run_id},
+    )
+    for model in models:
+        con.execute(
+            """
+            insert into runs
+            select $run_id, $version, current_timestamp, $sha, $dirty, $params, $seasons,
+                count(*), count(*) filter (where p.run_id = $run_id)
+            from incoming as i
+            inner join predictions as p using (prediction_id)
+            where i.model_version = $version
+            """,
+            {
+                "run_id": run_id,
+                "version": model.version,
+                "sha": sha,
+                "dirty": dirty,
+                "params": json.dumps(model.params),
+                "seasons": seasons,
+            },
+        )
+    new = con.execute(
+        "select count(*) from predictions where run_id = $run_id", {"run_id": run_id}
     ).fetchone()
+    con.execute("commit")
     con.close()
     return new[0] if new else 0
 
 
 def main() -> None:
     matches, odds = load()
-    predictions = run([Naive(), MarketConsensus(), Elo()], matches, odds)
-    print(f"{len(predictions)} predictions, {save(predictions)} new\n")
+    models: list[Model] = [Naive(), MarketConsensus(), Elo()]
+    predictions = run(models, matches, odds)
+    seasons = sorted(m.fixture.season for m in matches)
+    new = save(predictions, models, f"{seasons[0]}..{seasons[-1]}")
+    print(f"{len(predictions)} predictions, {new} new\n")
     print(report())
 
 
