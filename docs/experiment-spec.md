@@ -2,7 +2,7 @@
 
 Phase 0 of the project. Frozen rules for the first milestone, written before any data is loaded, so success cannot be redefined after the results come in.
 
-Status: draft. Freeze once the open decisions below are settled; after that, changes go in the change log with a date and a reason.
+Status: frozen 2026-09-28. Changes go in the change log with a date and a reason.
 
 ## Questions
 
@@ -123,12 +123,13 @@ Criterion 4 alone proves little. At average odds ~2.5, flat-stake ROI has a stan
 
 ## Open decisions
 
-- [ ] Holdout seasons: 2023/24 to 2025/26 as above, or shorter validation for a larger holdout?
+- [x] Holdout seasons: 2023/24 to 2025/26
 - [x] Executable bookmaker: bet365, 5.3% on stake (see Betting rule)
 - [x] `pre` timing: use Football-Data first; buy The Odds API snapshots only if timing matters
-- [ ] Time budget for Phases 1 to 3
+- [x] Time budget: none
 
 ## Change log
 
 - 2026-09-28: first draft
 - 2026-09-28: data sources; `pre` timing; Pinnacle dates and Betfair fallback; bet365 as executable odds
+- 2026-09-28: frozen; holdout kept at 2023/24 to 2025/26, no time budget
