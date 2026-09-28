@@ -31,6 +31,7 @@ class Fixture:
 class Match:
     fixture: Fixture
     result: str  # H, D or A
+    goals: tuple[int, int]  # home, away
     pre_at: datetime
     close_at: datetime
     result_at: datetime
@@ -51,11 +52,11 @@ def load(warehouse: Path = WAREHOUSE) -> tuple[list[Match], dict[str, list[Odds]
     """Every match before the holdout, and its odds by match_id."""
     con = duckdb.connect(str(warehouse), read_only=True)
     matches = [
-        Match(Fixture(*row[:5]), *row[5:])
+        Match(Fixture(*row[:5]), row[5], (row[6], row[7]), *row[8:])
         for row in con.execute(
             """
             select match_id, league, season, home_team, away_team,
-                result, pre_at, close_at, result_at
+                result, home_goals, away_goals, pre_at, close_at, result_at
             from int_matches
             where season < ?
             order by match_id

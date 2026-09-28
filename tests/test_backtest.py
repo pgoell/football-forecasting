@@ -7,7 +7,14 @@ import pytest
 
 from football_forecasting.backtest import Prediction, run, save
 from football_forecasting.data import Fixture, Match, Odds
-from football_forecasting.models import Elo, MarketConsensus, Naive
+from football_forecasting.models import (
+    DixonColes,
+    Elo,
+    MarketConsensus,
+    Naive,
+    Poisson,
+    score_probs,
+)
 from football_forecasting.report import report
 
 T0 = datetime(2004, 8, 6, tzinfo=UTC)
@@ -31,7 +38,10 @@ def matches(days: int = 1200) -> list[Match]:
             fixture = Fixture(f"E0_{day}_{i}", "E0", season_of(day), h, a)
             result = "HDA"[(day // 3 + i) % 3]
             end_of_day = date + timedelta(days=1)
-            out.append(Match(fixture, result, date - timedelta(hours=20), end_of_day, end_of_day))
+            goals = {"H": (2, day % 2), "D": (day % 3, day % 3), "A": (0, 1 + day % 2)}[result]
+            out.append(
+                Match(fixture, result, goals, date - timedelta(hours=20), end_of_day, end_of_day)
+            )
     return out
 
 
@@ -49,7 +59,7 @@ def odds_for(ms: list[Match]) -> dict[str, list[Odds]]:
 
 
 def all_models():
-    return [Naive(), Elo(), MarketConsensus()]
+    return [Naive(), Elo(), MarketConsensus(), Poisson(), DixonColes()]
 
 
 class Spy:
@@ -58,11 +68,10 @@ class Spy:
 
     def __init__(self) -> None:
         self.seen: dict[str, datetime] = {}
-        self.by_id: dict[str, Match] = {}
         self.violations: list[str] = []
 
-    def observe(self, fixture: Fixture, result: str) -> None:
-        self.seen[fixture.match_id] = self.by_id[fixture.match_id].result_at
+    def observe(self, match: Match) -> None:
+        self.seen[match.fixture.match_id] = match.result_at
 
     def predict(self, fixture, horizon, as_of, odds):
         self.violations += [mid for mid, at in self.seen.items() if at >= as_of]
@@ -73,7 +82,6 @@ class Spy:
 def test_models_see_only_earlier_results_and_known_odds():
     ms = matches()
     spy = Spy()
-    spy.by_id = {m.fixture.match_id: m for m in ms}
     run([spy], ms, odds_for(ms))
     assert spy.seen
     assert spy.violations == []
@@ -192,3 +200,24 @@ def test_scores(tmp_path):
     # m2 close: -ln 0.5, RPS (0.2^2 + 0.5^2) / 2; m2 pre is uncertain
     assert f"| validation | close | x | 1 | {-math.log(0.5):.4f} | 0.3800 | 0.1450 |" in text
     assert text.count("| validation | pre |") == 1
+
+
+def test_score_grid():
+    # independent Poisson with equal rates: home and away wins equally likely
+    h, d, a = score_probs(1.3, 1.3, 0.0)
+    assert h == pytest.approx(a)
+    # negative rho moves probability to 0-0 and 1-1, so to draws
+    assert score_probs(1.3, 1.3, -0.1)[1] > d
+
+
+def test_goal_models_learn_team_strength():
+    ms = matches()
+    strong = [
+        dataclasses.replace(m, result="H", goals=(3, 0)) if m.fixture.home_team == "A" else m
+        for m in ms
+    ]
+    for model in (Poisson(), DixonColes()):
+        run([model], strong, {})
+        last = next(m for m in reversed(strong) if m.fixture.home_team == "A")
+        p = model.predict(last.fixture, "pre", last.pre_at, [])
+        assert p is not None and p[0] > 0.6

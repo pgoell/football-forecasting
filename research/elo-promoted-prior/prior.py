@@ -18,7 +18,7 @@ for _ in range(20):
     elo = Elo(promoted_rating=prior)
     relegated, end = [], {}
     for m in warm_up:
-        elo.observe(m.fixture, m.result)
+        elo.observe(m)
         end[m.fixture.league, m.fixture.season] = dict(elo.ratings)
     for (league, season), teams in elo.teams.items():
         following = elo.teams.get((league, f"{season[2:]}{int(season[2:]) + 1:02d}"))
