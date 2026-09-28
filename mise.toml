@@ -15,6 +15,12 @@ run = [
   "uv sync",
 ]
 
+# ─── Data ───────────────────────────────────────────────────────────────────
+
+[tasks."data:download"]
+description = "Download Football-Data CSVs (E0, D1) into data/raw/"
+run = "uv run scripts/download_football_data.py"
+
 # ─── Testing ────────────────────────────────────────────────────────────────
 
 [tasks.test]
