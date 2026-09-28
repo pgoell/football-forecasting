@@ -228,11 +228,20 @@ Source: the repo's README (<https://github.com/martj42/international_results/blo
 
 Sources: <https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_Group_E> ("Coutinho {{goal|90+1}}", "Neymar {{goal|90+7}}"), archived <https://web.archive.org/web/20260928183155/https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_Group_E>; <https://en.wikipedia.org/wiki/UEFA_Euro_2024_knockout_stage> ("Bellingham {{goal|90+5}}", "Kane {{goal|91}}"), archived <https://web.archive.org/web/20260928182946/https://en.wikipedia.org/wiki/UEFA_Euro_2024_knockout_stage>. In WC and EURO finals up to EURO 2024, minute 45 holds 32 goals and 46 holds 6, minute 90 holds 111 and 91 holds 1.
 
-So the 90-minute score counts goals at minute 90 or before (`home_score_90`, `away_score_90`). A knockout match that went to extra time comes out level at 90, whoever won it. `own_goal` rows carry the team credited with the goal: the counts match the scores below. The 90-minute score is null unless `goals_complete`: every goal is listed, each with a minute.
+So the 90-minute score counts goals at minute 90 or before (`home_score_90`, `away_score_90`). A knockout match that went to extra time comes out level at 90, whoever won it. `own_goal` rows carry the team credited with the goal: the counts match the scores below.
+
+The rule holds in WC and EURO finals, not everywhere (see the first test below). So `score_90_reliable` is true, and the 90-minute score filled, only when:
+
+- `goals_complete`: every goal is listed, each with a minute
+- the match is not awarded (`awarded`, from `dbt/seeds/international_awarded_matches.csv`)
+- outside finals, no goal is listed after minute 90 (`after_90` = 0). In finals, goals after 90 are extra time and the score stays
+
+Outside finals, 2006-01-01 to 2024-07-14: of 11,198 competitive matches, 6,944 have every goal listed and 43 of those have a goal after minute 90, so 6,901 keep a 90-minute score. Of 6,007 friendlies, 598 have every goal listed, none with a goal after 90. Every finals match from 2006 keeps its 90-minute score, holdout included (count only).
 
 Tests:
 
-- `goals_after_90_only_in_level_matches`: in finals from 2006, a match with a goal after minute 90 is level at 90 (22 such matches to EURO 2024). The rule does not hold everywhere: 2003 to 2005 World Cup qualifiers put some stoppage goals at 91 to 95 (Northern Ireland v Austria, 2004-10-13, a goal at 93 with the match 2-3 at the time), and second legs such as France v Republic of Ireland, 2009-11-18, went to extra time while not level at 90. So `home_score_90` outside finals may be wrong for some qualifiers; the spec scores only finals
+- `goals_after_90_only_in_level_matches`: in finals from 2006, a match with a goal after minute 90 is level at 90 (22 such matches to EURO 2024). The rule does not hold everywhere: 2003 to 2005 World Cup qualifiers put some stoppage goals at 91 to 95 (Northern Ireland v Austria, 2004-10-13, a goal at 93 with the match 2-3 at the time), and second legs such as France v Republic of Ireland, 2009-11-18, went to extra time while not level at 90. So outside finals a match with a goal after 90 gets no 90-minute score
+- `score_90_only_where_reliable`: the 90-minute score is filled exactly where `score_90_reliable` is true, and that follows the rule above
 - `finals_goals_listed` (warns): every finals goal from 2006 is listed with a minute. It passes: all 535 development and validation matches, and the holdout (count only). Outside finals, 2006-01-01 to 2024-07-14: 6,944 of 11,198 competitive matches and 598 of 6,007 friendlies are complete
 - `score_90_within_full_score`: no team has more goals at 90 minutes than at the end
 - `finals_match_counts`: WC 2006 to 2022 have 64 matches each, WC 2026 104, EURO 2008 and 2012 31, EURO 2016, 2020 and 2024 51. It passes. EURO 2020, played in 2021, has `edition` 2020
@@ -262,16 +271,28 @@ Fields 10 and 11 are post-match: for every team and pair of its matches in a row
 
 `scripts/download_eloratings.py` fetches the three lookups and `<year>_results.tsv` for 2004 to 2026 (EURO 2004 in warm-up, then every scored year), one request a second. They come UTF-8 with Unix line endings (stored bytes equal the bytes received). The site rewrites its files: `2006_results.tsv` had `Last-Modified` 2026-09-27. `dbt/seeds/eloratings_files.csv` records them; test `eloratings_files_match_recorded_version` (warns).
 
+The files stored on 2026-09-28 are the data version: every check here and every score rests on them. Do not download again for the backtest. A new download may change past years (ratings and matches), and the script rewrites the seed, so `git diff dbt/seeds/eloratings_files.csv` shows which years changed; then either restore the old files or commit the new record and log the change in `docs/experiment-log.md`. `data/` is not in git, so keep a copy of `data/raw/eloratings/`: the site serves only its current files.
+
 ### Team names (tested)
 
 `dbt/seeds/team_names.csv` gives each team one `team_id`, its martj42 name and its current eloratings.net code: 236 teams, every martj42 team since 2004 that eloratings.net rates. 226 match on the first eloratings name; 10 by hand (`Czech Republic` CZ Czechia, `Republic of Ireland` IE Ireland, `American Samoa` AS Eastern Samoa, `Macau` MO Macao, `Réunion` RE, `Saint Barthélemy` BL, `São Tomé and Príncipe` ST, `Timor-Leste` TL East Timor, `United States Virgin Islands` VI, `Vatican City` VA). Left out: 84 martj42 teams eloratings does not rate (Catalonia, Jersey, other non-FIFA sides), and 4 eloratings teams martj42 lacks (Saba, Sint Eustatius, Cocos and Christmas Islands). `odds_api_name` is empty until The Odds API data comes in.
 
 Tests:
 
-- `international_teams_mapped`: every WC and EURO finals match and every EURO qualifier from 2006 has both teams mapped and finds its eloratings.net match on the same date with the same team ids. All do, holdout included (count only), except Italy v Serbia, EURO 2012 qualifier, 2010-10-12: "The Italy v Serbia match was abandoned after six minutes due to rioting by Serbian fans. The UEFA Control and Disciplinary Body awarded the match as a 3–0 forfeit win to Italy." (<https://en.wikipedia.org/wiki/UEFA_Euro_2012_qualifying_Group_C>, archived <https://web.archive.org/web/20260928183022/https://en.wikipedia.org/wiki/UEFA_Euro_2012_qualifying_Group_C>). martj42 has it at 3-0 with no goals listed; eloratings.net leaves it out
+- `international_teams_mapped`: every WC and EURO finals match and every EURO qualifier from 2006 has both teams mapped and finds its eloratings.net match on the same date with the same team ids. All do, holdout included (count only), except Italy v Serbia, EURO 2012 qualifier, 2010-10-12: "The Italy v Serbia match was abandoned after six minutes due to rioting by Serbian fans. The UEFA Control and Disciplinary Body awarded the match as a 3–0 forfeit win to Italy." (<https://en.wikipedia.org/wiki/UEFA_Euro_2012_qualifying_Group_C>, archived <https://web.archive.org/web/20260928183022/https://en.wikipedia.org/wiki/UEFA_Euro_2012_qualifying_Group_C>). martj42 has it at 3-0 with no goals listed; eloratings.net leaves it out. It is the one row of `dbt/seeds/international_awarded_matches.csv`: `awarded` is true, so it has no 90-minute score and is never scored. Its 3-0 still stands in `home_score`; a rating model should skip it, as eloratings.net does
 - `finals_scores_match_eloratings`: both sources give the same score for every finals match from 2006. They do
 
-`int_international_matches` joins the two: martj42 matches with eloratings.net pre-match ratings and score, turned to martj42's home and away. From 2006-01-01 to 2024-07-14, 10,642 of 11,198 competitive matches and 5,778 of 6,007 friendlies have eloratings ratings; the rest have an unmapped team or no eloratings match on the same date (not traced).
+`int_international_matches` joins the two: martj42 matches with eloratings.net pre-match ratings and score, turned to martj42's home and away. The two sources put 74 matches (13 competitive ones from 2006 to 2024-07-14, such as Kazakhstan v Germany, 2013-03-22 in martj42 and 2013-03-23 in eloratings.net) one or two days apart. For those the join takes the nearest eloratings.net match of the same teams within two days, if no other martj42 match took it; `elo_match_date` shows the date eloratings.net gives. Which source has the right date was not checked.
+
+From 2006-01-01 to 2024-07-14, 10,655 of 11,198 competitive matches and 5,819 of 6,007 friendlies have eloratings ratings. The 543 competitive matches without, by cause (traced 2026-09-28):
+
+| Cause | Matches | Examples |
+|---|---|---|
+| a team eloratings.net does not rate | 498 | Island Games 184, CONIFA World Football Cup 99, Viva World Cup 59, CONIFA European Football Cup 49, Muratti Vase 32 (Jersey 55, Guernsey 52, Padania 43, Alderney 34 and 62 other sides) |
+| both teams rated, match not in eloratings.net, 3-0 with no goals listed | 20 | Italy v Serbia 2010-10-12, Romania v Norway 2020-11-15, Sri Lanka v Macau 2019-06-11: likely awarded; only Italy v Serbia is checked |
+| both teams rated, played match not in eloratings.net | 25 | ELF Cup 2006 7, Palestine International Championship 2014, Nehru Cup 2012 5, Merdeka Tournament 2007 4 |
+
+So nearly all misses are real: the matches are not in eloratings.net, or a side is not one it rates. The joins lose none of the scored matches (test `international_teams_mapped`). One mapping gap: eloratings.net's `KD` Kurdistan is martj42's `Kurdistan` (2012 and 2013 matches), but martj42 calls the same side `Iraqi Kurdistan` at the 2012 Viva World Cup, so two matches there (against Western Sahara, 2012-06-04, and Northern Cyprus, 2012-06-09) find no rating. The seed maps one name to each code, so they stay out.
 
 ### eloratings.net (unverified terms)
 
@@ -303,4 +324,8 @@ Cost for the spec: 270 tournament matches with odds (EURO 2020 51, WC 2022 64, E
 
 ## Open checks
 
-- 2 rows with a margin over 30% (1 William Hill, 1 Interwetten): the dbt test `odds_overround_plausible` warns on them; likely source errors, not yet traced.
+- The dbt test `odds_overround_plausible` warns on 65 single-bookmaker rows outside a margin of -1% to 30% (counted 2026-09-28). Likely source errors, not traced, and left in: marking them unreliable would change the stored scores.
+  - E0 and D1: 2 rows at `pre` (William Hill D1 2011/12, 73%; Interwetten D1 2019/20, 31%)
+  - D2, E1, E2 before 2024/25: 17 rows over 8 bookmakers, one or two a season (11 over 30%, 6 under -1%; Stan James D2 2009/10 to 2011/12, Sportingbet E1 2009/10 and E2 2007/08, William Hill E2 2010/11 among them)
+  - Betfair Exchange (`BFE`), D2, E1 and E2 from 2024/25: 31 rows (26 at `pre` with margins up to 183%, 5 at `close`); see the D2, E1 and E2 section
+  - E1 and E2 2025/26 at `close`: 15 rows on 7 matches, several bookmakers each under -1%, so likely stale closing prices
