@@ -1,14 +1,18 @@
 # mise.toml: toolchain pins and task definitions
 
 [tools]
-python = "3.13"
-uv     = "latest"
+python   = "3.13"
+uv       = "latest"
+lefthook = "latest"
 
 # ─── Bootstrap ──────────────────────────────────────────────────────────────
 
 [tasks.install]
-description = "Install dependencies"
-run = "uv sync"
+description = "Install git hooks and dependencies"
+run = [
+  "lefthook install",
+  "uv sync",
+]
 
 # ─── Testing ────────────────────────────────────────────────────────────────
 

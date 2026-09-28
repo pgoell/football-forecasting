@@ -11,8 +11,8 @@ The rules of the experiment live in [docs/experiment-spec.md](docs/experiment-sp
 Needs [mise](https://mise.jdx.dev).
 
 ```sh
-mise install      # python + uv
-mise run install  # dependencies
+mise install      # python, uv, lefthook
+mise run install  # git hooks + dependencies
 mise run test
 mise run lint     # ruff + ty
 ```
