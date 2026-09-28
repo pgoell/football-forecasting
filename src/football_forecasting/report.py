@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import duckdb
+import numpy as np
 
 from football_forecasting.data import (
     FIRST_DEVELOPMENT_SEASON,
@@ -135,6 +136,17 @@ def calibration(
         """,
         sel,
     )
+
+
+def bootstrap(diff: np.ndarray, days: np.ndarray, draws: int = 1000) -> tuple[float, float]:
+    """95% interval of mean(diff), resampling whole matchdays; `days` labels each row."""
+    ids = np.unique(days, return_inverse=True)[1]
+    k = ids.max() + 1
+    rng = np.random.default_rng(0)
+    counts = np.stack([np.bincount(d, minlength=k) for d in rng.integers(0, k, (draws, k))])
+    boot = counts[:, ids] @ diff / counts[:, ids].sum(axis=1)
+    lo, hi = np.percentile(boot, [2.5, 97.5])
+    return float(lo), float(hi)
 
 
 def table(result: duckdb.DuckDBPyConnection) -> str:
