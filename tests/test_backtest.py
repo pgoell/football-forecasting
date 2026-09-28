@@ -188,8 +188,8 @@ def test_scores(tmp_path):
     con.execute(
         """
         create table int_matches as select * from (values
-            ('m1', '0506', 'H', false), ('m2', '1920', 'A', true)
-        ) as t(match_id, season, result, pre_timing_uncertain)
+            ('m1', 'E0', '0506', 'H', false), ('m2', 'E0', '1920', 'A', true)
+        ) as t(match_id, league, season, result, pre_timing_uncertain)
         """
     )
     con.close()

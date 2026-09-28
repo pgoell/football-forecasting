@@ -103,6 +103,14 @@ The shots-dc idea with expected goals instead of shots on target.
 - **How.** Each match counts `(1 − w) × goals + w × xG` for each team, with **w = 0.25**, chosen on the development seasons from 2014/15 only, from 0, 0.25, 0.5, 0.75 and 1. The rest is dixon-coles unchanged.
 - Understat starts in 2014/15, so the model forecasts from 2014/15 on; in its first seasons the older matches in its window count only their goals.
 
+### elo-country and dixon-coles-country
+
+elo and dixon-coles with the same settings, for the five leagues: E0, E1 (Championship) and E2 (League One) in England, D1 and D2 (2. Bundesliga) in Germany. The only change: a team keeps its rating when it goes up or down between these leagues, instead of starting again at the promoted-team value.
+
+- **elo-country.** One rating scale per country. A team coming from a league we do not cover starts 100 below the average of the league it joins, the same gap elo gives promoted teams. In 2000/01 each league starts 100 lower per step down.
+- **dixon-coles-country.** Fitted on all leagues of a country at once, so a promoted team's matches in the league below still count toward its strength. Each league has its own level, and teams are pulled toward their league's level instead of toward the average.
+- They forecast all five leagues. elo, poisson, dixon-coles, shots-dc and xg-dc run on E0 and D1 only.
+
 ### market-consensus
 
 What the bookmakers think.
@@ -114,12 +122,12 @@ What the bookmakers think.
 
 The market is the bar to beat. Beating it clearly would more likely point to a bug or leakage than to a real edge.
 
-### market-elo, market-dc, market-shots and market-xg
+### market-elo, market-dc, market-shots, market-xg, market-elo-country and market-dc-country
 
-The market forecast, adjusted by one of our models: elo for market-elo, dixon-coles for market-dc, shots-dc for market-shots, xg-dc for market-xg. They answer one question: does our model know anything the market does not?
+The market forecast, adjusted by one of our models: elo for market-elo, dixon-coles for market-dc, shots-dc for market-shots, xg-dc for market-xg, elo-country and dixon-coles-country for the last two. They answer one question: does our model know anything the market does not?
 
 - **Blend.** Each chance is `market^a × model^b × e^c`, then the three are scaled to add up to 100%. `b` is the weight our model gets; `a = 1`, `b = 0`, `c = 0` gives the market back. `c` is a fixed shift for home wins and one for draws.
-- **Fitted** before each season on all earlier seasons from 2005/06 (a multinomial logistic regression, no penalty), separately for pre-match and closing forecasts. So the first season has no forecasts: they start in 2006/07 pre-match and 2013/14 closing (closing odds start in 2012/13).
+- **Fitted** before each season on all earlier seasons from 2005/06 (a multinomial logistic regression, no penalty), separately for pre-match and closing forecasts; the two country blends also separately for each league. So the first season has no forecasts: they start in 2006/07 pre-match and 2013/14 closing (closing odds start in 2012/13).
 - **Inputs** are the stored forecasts of market-consensus and of the model at the same time. Nothing else, and no model is refitted.
 
 If our model adds nothing, `b` comes out near 0 and the blend scores about the same as the market, or slightly worse, since fitting the weights adds noise.

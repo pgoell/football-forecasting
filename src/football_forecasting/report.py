@@ -47,6 +47,7 @@ with p as (
     inner join wh.int_matches as m using (match_id)
     where m.season >= $development and m.season < $holdout
         and p.model_version in (select unnest($models))
+        and ($leagues is null or m.league in (select unnest($leagues)))
 ),
 
 common as (
@@ -79,6 +80,7 @@ class Selection:
     horizon: str | None = None
     period: str | None = None
     certain_only: bool = False
+    leagues: tuple[str, ...] | None = None  # None: every league
 
 
 def query(con: duckdb.DuckDBPyConnection, sql: str, sel: Selection) -> duckdb.DuckDBPyConnection:
@@ -91,6 +93,7 @@ def query(con: duckdb.DuckDBPyConnection, sql: str, sel: Selection) -> duckdb.Du
         "horizon": sel.horizon,
         "period": sel.period,
         "certain_only": sel.certain_only,
+        "leagues": list(sel.leagues) if sel.leagues else None,
     }
     return con.execute(f"with scored as ({SCORED}) {sql}", params)
 

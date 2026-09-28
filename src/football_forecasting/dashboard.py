@@ -72,14 +72,31 @@ MODEL_HELP = (
     "target, which say more about how well a team played than the few goals do. "
     "**xg-dc**: the same with expected goals (xG, from Understat) in place of shots; "
     "starts in 2014/15, so choosing it drops every earlier season. "
+    "These run on E0 and D1 only. "
+    "**elo-country** and **dixon-coles-country**: elo and dixon-coles for all five leagues, "
+    "keeping a team's rating when it goes up or down between leagues of one country. "
     "**market-consensus**: the bookmakers' odds with their margin removed, taking the "
     "middle value across bookmakers. The bar to beat. "
-    "**market-elo**, **market-dc**, **market-shots** and **market-xg**: the market "
-    "forecast blended with elo, dixon-coles, shots-dc or xg-dc, "
+    "**market-elo**, **market-dc**, **market-shots**, **market-xg**, "
+    "**market-elo-country** and **market-dc-country**: the market forecast blended with "
+    "one of our models, "
     "the blend fitted on earlier seasons; do our models add anything to the market? They "
     "start a season later than the rest (2006/07 pre-match, 2013/14 closing), so choosing "
     "them drops the first season from every model's scores. "
     "How each works, with its settings: Glossary."
+)
+LEAGUES = {
+    "E0": "Premier League (E0)",
+    "D1": "Bundesliga (D1)",
+    "E1": "Championship (E1)",
+    "E2": "League One (E2)",
+    "D2": "2. Bundesliga (D2)",
+}
+LEAGUE_HELP = (
+    "Which leagues are scored. The first experiment covers E0 and D1; the second asks "
+    "whether our models beat the thinner market of D2, E1 and E2, with elo-country and "
+    "dixon-coles-country. Models that run on E0 and D1 only leave no matches in the "
+    "other leagues."
 )
 UNCERTAIN_HELP = (
     "Around Christmas and New Year the pre-match odds may have been recorded later than "
@@ -123,7 +140,7 @@ def glossary() -> None:
 def backtest() -> None:
     st.title("Football backtest")
     st.markdown(
-        "How well each model forecasts Premier League and Bundesliga matches, replayed "
+        "How well each model forecasts league matches in England and Germany, replayed "
         "match by match with only what was known at the time. Lower scores are better. "
         "New here? Start with the **Glossary** in the sidebar."
     )
@@ -144,7 +161,11 @@ def backtest() -> None:
     models = list(runs.sort_values("started_at")["model_version"].drop_duplicates())
     scale = color(models)
 
-    chosen = st.multiselect("Models", models, default=models, help=MODEL_HELP)
+    league_col, model_col = st.columns([1, 3])
+    chosen_leagues = league_col.multiselect(
+        "Leagues", list(LEAGUES), default=["E0", "D1"], format_func=LEAGUES.get, help=LEAGUE_HELP
+    )
+    chosen = model_col.multiselect("Models", models, default=models, help=MODEL_HELP)
     period_col, horizon_col, skip_col = st.columns(3, vertical_alignment="bottom")
     period = period_col.selectbox(
         "Seasons", list(PERIODS), format_func=PERIODS.get, help=PERIOD_HELP
@@ -153,10 +174,10 @@ def backtest() -> None:
         "Forecast made", list(HORIZONS), format_func=HORIZONS.get, help=HORIZON_HELP
     )
     certain_only = skip_col.toggle("Skip 20 Dec to 5 Jan", help=UNCERTAIN_HELP)
-    if len(chosen) < 1:
-        st.info("Pick at least one model.")
+    if not chosen or not chosen_leagues:
+        st.info("Pick at least one league and one model.")
         return
-    sel = Selection(tuple(chosen), horizon, period, certain_only)
+    sel = Selection(tuple(chosen), horizon, period, certain_only, tuple(chosen_leagues))
     if horizon == "close" and period == "development":
         st.info(
             "Closing odds exist only from 2012/13, and until 2018/19 only from Pinnacle, "
@@ -169,8 +190,16 @@ def backtest() -> None:
         "Average over all matches in the chosen seasons. Lower is better; "
         "guessing ⅓ each scores 1.099 in log loss. What each score means: Glossary."
     )
+    scores = by_period(con, sel).df()
+    if scores.empty:
+        st.info(
+            "No match was forecast by every chosen model in these leagues. Models that run "
+            "on E0 and D1 only (elo, poisson, dixon-coles, shots-dc, xg-dc and their blends) "
+            "have no forecasts for D2, E1 and E2."
+        )
+        return
     st.dataframe(
-        by_period(con, sel).df().drop(columns=["period", "horizon"]),
+        scores.drop(columns=["period", "horizon"]),
         hide_index=True,
         column_config={
             "model": st.column_config.TextColumn("Model"),
