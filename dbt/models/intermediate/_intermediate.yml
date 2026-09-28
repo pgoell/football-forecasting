@@ -5,5 +5,8 @@ models:
       - name: available_at
         description: when the odds became known; see the model for the rule
         data_tests: [not_null]
+      - name: is_reliable
+        description: false where the source flags the bookmaker's odds as unreliable
+        data_tests: [not_null]
       - name: overround
         description: sum of 1/odds; 1.05 = 5% margin

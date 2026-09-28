@@ -6,14 +6,18 @@
 -- every season, holidays included, is unverified.
 -- available_at, close: kickoff; end of match day where kickoff time is unknown
 -- (before 2019/20).
+-- is_reliable: false from the bookmaker's unreliable_from date in the
+-- bookmaker_unreliable_periods seed (Pinnacle since 23/07/2025, per football-data.co.uk/data.php).
 with joined as (
     select
         o.*,
         m.match_date,
         m.kickoff_at,
+        u.unreliable_from,
         dayofweek(m.match_date) as dow  -- 0 = Sunday
     from {{ ref('stg_football_data__odds') }} as o
     inner join {{ ref('stg_football_data__matches') }} as m using (match_id)
+    left join {{ ref('bookmaker_unreliable_periods') }} as u on o.bookmaker = u.code
 ),
 
 timed as (
@@ -41,6 +45,7 @@ select
     bookmaker,
     moment,
     available_at,
+    coalesce(match_date < unreliable_from, true) as is_reliable,
     odds_home,
     odds_draw,
     odds_away,

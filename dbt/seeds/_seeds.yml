@@ -1,0 +1,22 @@
+seeds:
+  - name: bookmakers
+    description: Football-Data bookmaker codes.
+    columns:
+      - name: code
+        data_tests: [unique, not_null]
+      - name: licensed_de
+        description: on the GGL whitelist of licensed German operators
+
+  - name: bookmaker_unreliable_periods
+    description: Bookmakers whose odds the source flags as unreliable from a match date on.
+    config:
+      column_types:
+        unreliable_from: date
+    columns:
+      - name: code
+        data_tests:
+          - unique
+          - relationships:
+              arguments:
+                to: ref('bookmakers')
+                field: code
