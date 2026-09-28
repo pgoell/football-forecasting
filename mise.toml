@@ -32,6 +32,14 @@ run = "uv run dbt build --profiles-dir ."
 description = "Run the walk-forward backtest, store predictions, print scores"
 run = "uv run python -m football_forecasting.backtest"
 
+[tasks.dashboard]
+description = "Serve the backtest dashboard on localhost:8501"
+run = "uv run streamlit run src/football_forecasting/dashboard.py --server.address 127.0.0.1 --server.headless true"
+
+[tasks."dashboard:deploy"]
+description = "Build and (re)start the dashboard container behind Caddy"
+run = "docker compose up -d --build"
+
 # ─── Testing ────────────────────────────────────────────────────────────────
 
 [tasks.test]

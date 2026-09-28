@@ -13,6 +13,7 @@ dependencies = [
     "duckdb>=1.5.5",
     "numpy>=2.5.3",
     "scipy>=1.18.1",
+    "streamlit>=1.64.0",
 ]
 
 [dependency-groups]
@@ -42,4 +43,5 @@ select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]
 python-version = "3.13"
 
 [tool.ty.src]
-exclude = ["research"]
+# dashboard.py: ty cannot type altair's decorated chart methods (every error there is that)
+exclude = ["research", "src/football_forecasting/dashboard.py"]

@@ -1,0 +1,16 @@
+# Dashboard at football.pascalkraus.com; Caddy route and DNS live in server-infra.
+services:
+  dashboard:
+    build: .
+    container_name: football-dashboard
+    restart: unless-stopped
+    user: "1000:1000"
+    volumes:
+      - ./data:/app/data:ro
+    networks:
+      - web
+
+networks:
+  web:
+    external: true
+    name: web

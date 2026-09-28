@@ -4,6 +4,7 @@ Each model is scored on the matches every listed model predicted, so the
 numbers compare like with like. Holdout and warm-up seasons are never scored.
 """
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import duckdb
@@ -25,6 +26,7 @@ with p as (
         m.season,
         case when m.season < $validation then 'development' else 'validation' end as period,
         p.horizon = 'pre' and m.pre_timing_uncertain as uncertain,
+        m.result,
         case m.result when 'H' then p.p_home when 'D' then p.p_draw else p.p_away end
             as p_result,
         (p.p_home - (m.result = 'H')::int) ** 2 + (p.p_draw - (m.result = 'D')::int) ** 2
@@ -46,14 +48,99 @@ common as (
 )
 
 select * from p semi join common using (match_id, horizon)
+where ($horizon is null or horizon = $horizon)
+    and ($period is null or period = $period)
+    and not ($certain_only and uncertain)
 """
 
 
-def table(con: duckdb.DuckDBPyConnection, sql: str, params: dict) -> str:
-    rel = con.execute(sql, params)
-    names = [d[0] for d in rel.description]
+def connect(
+    predictions: Path = PREDICTIONS, warehouse: Path = WAREHOUSE
+) -> duckdb.DuckDBPyConnection:
+    con = duckdb.connect(str(predictions), read_only=True)
+    con.execute(f"attach '{warehouse}' as wh (read_only)")
+    return con
+
+
+@dataclass(frozen=True)
+class Selection:
+    """Which scored predictions a view covers."""
+
+    models: tuple[str, ...] = MODELS
+    horizon: str | None = None
+    period: str | None = None
+    certain_only: bool = False
+
+
+def query(con: duckdb.DuckDBPyConnection, sql: str, sel: Selection) -> duckdb.DuckDBPyConnection:
+    """Run `sql`, which reads the scored predictions as `scored`."""
+    params = {
+        "development": FIRST_DEVELOPMENT_SEASON,
+        "validation": FIRST_VALIDATION_SEASON,
+        "holdout": FIRST_HOLDOUT_SEASON,
+        "models": list(sel.models),
+        "horizon": sel.horizon,
+        "period": sel.period,
+        "certain_only": sel.certain_only,
+    }
+    return con.execute(f"with scored as ({SCORED}) {sql}", params)
+
+
+def by_period(con: duckdb.DuckDBPyConnection, sel: Selection) -> duckdb.DuckDBPyConnection:
+    return query(
+        con,
+        """
+        select period, horizon, model_version as model, count(*) as n,
+            avg(-ln(p_result)) as log_loss, avg(brier) as brier, avg(rps) as rps
+        from scored
+        group by all
+        order by period, horizon desc, log_loss
+        """,
+        sel,
+    )
+
+
+def by_season(con: duckdb.DuckDBPyConnection, sel: Selection) -> duckdb.DuckDBPyConnection:
+    """Log loss per season, one column per model."""
+    columns = ", ".join(
+        f"avg(-ln(p_result)) filter (where model_version = '{m}') as \"{m}\"" for m in sel.models
+    )
+    return query(
+        con,
+        f"select season, horizon, {columns} from scored group by all order by horizon desc, season",
+        sel,
+    )
+
+
+def calibration(
+    con: duckdb.DuckDBPyConnection, sel: Selection, bins: int = 10
+) -> duckdb.DuckDBPyConnection:
+    """Mean forecast against observed frequency, per model, outcome and probability bin."""
+    return query(
+        con,
+        f"""
+        , outcomes as (
+            select model_version as model, o.outcome, o.p, (result = o.outcome)::int as hit
+            from scored, unnest([
+                {{'outcome': 'H', 'p': p_home}},
+                {{'outcome': 'D', 'p': p_draw}},
+                {{'outcome': 'A', 'p': p_away}}
+            ]) as t(o)
+        )
+        select model, outcome, least(floor(p * {bins}), {bins - 1}) as bin,
+            count(*) as n, avg(p) as forecast, avg(hit) as observed
+        from outcomes
+        group by all
+        order by model, outcome, bin
+        """,
+        sel,
+    )
+
+
+def table(result: duckdb.DuckDBPyConnection) -> str:
+    names = [d[0] for d in result.description or []]
     lines = ["| " + " | ".join(names) + " |", "|" + "---|" * len(names)]
-    for row in rel.fetchall():
+    for row in result.fetchall():
         cells = [f"{v:.4f}" if isinstance(v, float) else str(v) for v in row]
         lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines)
@@ -62,34 +149,14 @@ def table(con: duckdb.DuckDBPyConnection, sql: str, params: dict) -> str:
 def report(
     predictions: Path = PREDICTIONS, models: tuple[str, ...] = MODELS, warehouse: Path = WAREHOUSE
 ) -> str:
-    con = duckdb.connect(str(predictions), read_only=True)
-    con.execute(f"attach '{warehouse}' as wh (read_only)")
-    params = {
-        "development": FIRST_DEVELOPMENT_SEASON,
-        "validation": FIRST_VALIDATION_SEASON,
-        "holdout": FIRST_HOLDOUT_SEASON,
-        "models": list(models),
-    }
-    by_period = f"""
-        select period, horizon, model_version as model, count(*) as n,
-            avg(-ln(p_result)) as log_loss, avg(brier) as brier, avg(rps) as rps
-        from ({SCORED})
-        {{where}}
-        group by all
-        order by period, horizon desc, log_loss
-    """
-    by_season = f"""
-        pivot (select season, horizon, model_version, -ln(p_result) as log_loss from ({SCORED}))
-        on model_version in ({", ".join(f"'{m}'" for m in models)}) using avg(log_loss)
-        order by horizon desc, season
-    """
+    con = connect(predictions, warehouse)
     return "\n\n".join(
         [
             "## All predictions",
-            table(con, by_period.format(where=""), params),
+            table(by_period(con, Selection(models))),
             "## Without pre_timing_uncertain (pre, 20 Dec to 5 Jan)",
-            table(con, by_period.format(where="where not uncertain"), params),
+            table(by_period(con, Selection(models, certain_only=True))),
             "## Log loss by season",
-            table(con, by_season, params),
+            table(by_season(con, Selection(models))),
         ]
     )
