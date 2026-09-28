@@ -31,6 +31,7 @@ SCORED = """
 with p as (
     select
         p.*,
+        m.league,
         m.season,
         case when m.season < $validation then 'development' else 'validation' end as period,
         p.horizon = 'pre' and m.pre_timing_uncertain as uncertain,
@@ -145,14 +146,17 @@ def calibration(
     )
 
 
-def bootstrap(diff: np.ndarray, days: np.ndarray, draws: int = 1000) -> tuple[float, float]:
-    """95% interval of mean(diff), resampling whole matchdays; `days` labels each row."""
+def bootstrap(
+    diff: np.ndarray, days: np.ndarray, draws: int = 1000, level: float = 0.95
+) -> tuple[float, float]:
+    """Interval of mean(diff), resampling whole matchdays; `days` labels each row."""
     ids = np.unique(days, return_inverse=True)[1]
     k = ids.max() + 1
     rng = np.random.default_rng(0)
     counts = np.stack([np.bincount(d, minlength=k) for d in rng.integers(0, k, (draws, k))])
     boot = counts[:, ids] @ diff / counts[:, ids].sum(axis=1)
-    lo, hi = np.percentile(boot, [2.5, 97.5])
+    tail = 50 * (1 - level)
+    lo, hi = np.percentile(boot, [tail, 100 - tail])
     return float(lo), float(hi)
 
 

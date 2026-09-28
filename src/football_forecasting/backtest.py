@@ -30,11 +30,14 @@ from football_forecasting.data import (
     ROOT,
     Match,
     Odds,
+    leagues,
     load,
 )
 from football_forecasting.models import (
     DixonColes,
+    DixonColesCountry,
     Elo,
+    EloCountry,
     MarketConsensus,
     Model,
     Naive,
@@ -234,16 +237,17 @@ def save(
 
 def main() -> None:
     matches, odds = load()
-    models: list[Model] = [
-        Naive(),
-        MarketConsensus(),
-        Elo(),
-        Poisson(),
-        DixonColes(),
-        ShotsDixonColes(),
-        XgDixonColes(),
+    known = leagues()
+    # The first experiment's models stay on E0 and D1, where they were stored:
+    # elo-v1 fits one ordered logit on all matches it sees, so more leagues
+    # would change its stored forecasts. The rest see every league.
+    first = [m for m in matches if m.fixture.league in ("E0", "D1")]
+    groups: list[tuple[list[Model], list[Match]]] = [
+        ([Naive(), MarketConsensus(), EloCountry(known), DixonColesCountry(known)], matches),
+        ([Elo(), Poisson(), DixonColes(), ShotsDixonColes(), XgDixonColes()], first),
     ]
-    predictions = run(models, matches, odds)
+    models = [model for group, _ in groups for model in group]
+    predictions = [p for group, ms in groups for p in run(group, ms, odds)]
     seasons = sorted(m.fixture.season for m in matches)
     new = save(predictions, models, f"{seasons[0]}..{seasons[-1]}")
     print(f"{len(predictions)} predictions, {new} new\n")

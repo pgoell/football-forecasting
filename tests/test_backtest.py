@@ -12,7 +12,9 @@ from football_forecasting.backtest import Prediction, run, save
 from football_forecasting.data import Fixture, Match, Odds
 from football_forecasting.models import (
     DixonColes,
+    DixonColesCountry,
     Elo,
+    EloCountry,
     MarketConsensus,
     Naive,
     Poisson,
@@ -70,7 +72,7 @@ def all_models():
 
 class Spy:
     version = "spy"
-    params: dict[str, float] = {}  # noqa: RUF012
+    params: dict[str, float | str] = {}  # noqa: RUF012
 
     def __init__(self) -> None:
         self.seen: dict[str, datetime] = {}
@@ -227,6 +229,51 @@ def test_goal_models_learn_team_strength():
         last = next(m for m in reversed(strong) if m.fixture.home_team == "A")
         p = model.predict(last.fixture, "pre", last.pre_at, [])
         assert p is not None and p[0] > 0.6
+
+
+LEAGUES = {"E0": ("England", 1), "E1": ("England", 2)}
+
+
+def two_leagues() -> list[Match]:
+    """2004/05: E0 W X Y Z, E1 A B C D, A wins every match 3-0. 2005/06: A
+    promoted in place of Z, which drops to E1 beside N, new from below."""
+    out = []
+    seasons = [("0405", {"E0": "WXYZ", "E1": "ABCD"}), ("0506", {"E0": "WXYA", "E1": "ZBCN"})]
+    for year, (season, lineup) in enumerate(seasons):
+        for rnd in range(12):
+            date = T0 + timedelta(days=365 * year + 3 * rnd)
+            for league, teams in lineup.items():
+                for i, (h, a) in enumerate(
+                    [(0, 1), (2, 3), (0, 2), (1, 3), (0, 3), (1, 2)][rnd % 6 : rnd % 6 + 1]
+                ):
+                    home, away = teams[(h + rnd) % 4], teams[(a + rnd) % 4]
+                    goals = (3, 0) if home == "A" else (0, 3) if away == "A" else (1, 1)
+                    result = "H" if goals[0] > goals[1] else "A" if goals[0] < goals[1] else "D"
+                    fixture = Fixture(f"{league}_{season}_{rnd}_{i}", league, season, home, away)
+                    end = date + timedelta(days=1)
+                    out.append(Match(fixture, result, goals, date - timedelta(hours=20), end, end))
+    return out
+
+
+def test_country_models_carry_teams_across_leagues():
+    ms = two_leagues()
+    first = [m for m in ms if m.fixture.season == "0405"]
+    elo = EloCountry(LEAGUES)
+    run([elo], first, {})
+    carried = elo.ratings["England", "A"]
+    e1_mean = sum(elo.ratings["England", t] for t in "ABCD") / 4
+    assert carried > 1400  # started at 1400 in E1 (tier 2) and won every match
+    promoted = Fixture("x", "E0", "0506", "A", "W")
+    assert elo.rating(promoted, "A") == carried
+    assert elo.rating(Fixture("y", "E1", "0506", "N", "B"), "N") == pytest.approx(e1_mean - 100)
+
+    country, plain = DixonColesCountry(LEAGUES), DixonColes()
+    run([country, plain], first, {})
+    at = ms[-1].pre_at
+    p_country = country.predict(promoted, "pre", at, [])
+    p_plain = plain.predict(promoted, "pre", at, [])
+    assert p_country is not None and p_plain is not None
+    assert p_country[0] > p_plain[0]  # A keeps its strength instead of the promoted prior
 
 
 def test_counts_blend_goals_with_shots_or_xg():

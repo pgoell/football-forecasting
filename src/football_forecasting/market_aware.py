@@ -9,6 +9,9 @@ validation seasons, then predicts that season. It reads stored predictions only,
 so no base model is refit. b is the weight our model gets; a = 1, b = 0, c = 0
 gives the market back.
 
+The `-country-v1` blends (the thin-market experiment, docs/experiment-spec.md
+change log) are fitted per league and horizon, the others on all leagues together.
+
 Run after the base models are stored (mise run backtest does both).
 """
 
@@ -30,21 +33,28 @@ VARIANTS = {
     "market-dc-v1": "dixon-coles-v1",
     "market-shots-v1": "shots-dc-v1",
     "market-xg-v1": "xg-dc-v1",
+    "market-elo-country-v1": "elo-country-v1",
+    "market-dc-country-v1": "dixon-coles-country-v1",
 }
+PER_LEAGUE = {"market-elo-country-v1", "market-dc-country-v1"}
 P = ["p_home", "p_draw", "p_away"]
 
 
 class Combined:
     def __init__(self, version: str) -> None:
         self.version = version
-        self.params: dict[str, float | str] = {"market": MARKET, "model": VARIANTS[version]}
+        self.params: dict[str, float | str] = {
+            "market": MARKET,
+            "model": VARIANTS[version],
+            "fit": "per league" if version in PER_LEAGUE else "all leagues",
+        }
 
 
 def inputs(con: duckdb.DuckDBPyConnection, model: str) -> pd.DataFrame:
     """One row per match and horizon that the market and `model` both predicted."""
     return con.execute(
         """
-        select match_id, horizon, season, m.result, mk.prediction_as_of,
+        select match_id, horizon, m.league, season, m.result, mk.prediction_as_of,
             mk.odds_home, mk.odds_draw, mk.odds_away,
             mk.p_home, mk.p_draw, mk.p_away,
             md.p_home as model_home, md.p_draw as model_draw, md.p_away as model_away
@@ -90,24 +100,26 @@ def fit(market: np.ndarray, model: np.ndarray, y: np.ndarray) -> np.ndarray:
     return minimize(loss, np.array([1.0, 0.0, 0.0, 0.0]), jac=True, method="BFGS").x
 
 
-def walk_forward(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Predictions per match, and the fitted parameters per horizon and season."""
+def walk_forward(df: pd.DataFrame, per_league: bool = False) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Predictions per match, and the fitted parameters per horizon (and league) and season."""
     out, weights = [], []
     y = df["result"].map({"H": 0, "D": 1, "A": 2}).to_numpy()
     market, model = features(df)
-    for horizon in df["horizon"].unique():
-        in_horizon = (df["horizon"] == horizon).to_numpy()
-        for season in sorted(df.loc[in_horizon, "season"].unique()):
-            train = in_horizon & (df["season"] < season).to_numpy()
-            test = in_horizon & (df["season"] == season).to_numpy()
+    groups = df["horizon"] + ("|" + df["league"] if per_league else "")
+    for group in groups.unique():
+        in_group = (groups == group).to_numpy()
+        for season in sorted(df.loc[in_group, "season"].unique()):
+            train = in_group & (df["season"] < season).to_numpy()
+            test = in_group & (df["season"] == season).to_numpy()
             if not train.any():
                 continue
             params = fit(market[train], model[train], y[train])
             rows = df[test].copy()
             rows[P] = probs(params, market[test], model[test])
             out.append(rows)
-            weights.append((horizon, season, int(train.sum()), *params))
-    columns = ["horizon", "season", "n_fit", "market", "model", "c_home", "c_draw"]
+            weights.append((*group.split("|"), season, int(train.sum()), *params))
+    columns = ["horizon", *(["league"] if per_league else []), "season", "n_fit"]
+    columns += ["market", "model", "c_home", "c_draw"]
     return pd.concat(out), pd.DataFrame(weights, columns=columns)
 
 
@@ -138,7 +150,7 @@ def main() -> None:
     con.close()  # save() opens the store for writing
     for version, model in VARIANTS.items():
         df = data[model]
-        combined, _ = walk_forward(df)
+        combined, _ = walk_forward(df, version in PER_LEAGUE)
         rows = predictions(version, combined)
         seasons = sorted(df["season"])
         new = save(rows, [Combined(version)], f"{seasons[0]}..{seasons[-1]}")
