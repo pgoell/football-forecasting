@@ -4,8 +4,10 @@
 # ///
 """Download Football-Data CSVs for E0 and D1 into data/raw/football-data/.
 
-Each run overwrites the files and appends one line per file to _manifest.jsonl,
-so we know what was fetched when.
+Files are stored as UTF-8 with Unix line endings: a few old seasons come in
+Windows-1252, newer ones with a BOM. Each run overwrites the files and appends
+one line per file to _manifest.jsonl (sha256 of the bytes as downloaded), so we
+know what was fetched when.
 
     uv run scripts/download_football_data.py [--first 2000] [--last 2026]
 """
@@ -28,6 +30,15 @@ def season_code(start_year: int) -> str:
     return f"{start_year % 100:02d}{(start_year + 1) % 100:02d}"
 
 
+def to_utf8(body: bytes) -> str:
+    """Decode UTF-8 (with or without BOM), falling back to Windows-1252."""
+    try:
+        text = body.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = body.decode("cp1252")
+    return text.replace("\r\n", "\n")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--first", type=int, default=2000, help="first season start year")
@@ -44,7 +55,7 @@ def main() -> None:
                 body = resp.read()
             path = OUT / league / f"{season}.csv"
             path.parent.mkdir(exist_ok=True)
-            path.write_bytes(body)
+            path.write_text(to_utf8(body), encoding="utf-8", newline="\n")
             entry = {
                 "league": league,
                 "season": season,
