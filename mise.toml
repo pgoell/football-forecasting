@@ -25,6 +25,14 @@ run = "uv run scripts/download_football_data.py"
 description = "Download Understat xG (EPL, Bundesliga) into data/raw/"
 run = "uv run scripts/download_understat.py"
 
+[tasks."data:download:international-results"]
+description = "Download martj42/international_results (pinned commit) into data/raw/"
+run = "uv run scripts/download_international_results.py"
+
+[tasks."data:download:eloratings"]
+description = "Download eloratings.net results files (2004 to 2026) into data/raw/"
+run = "uv run scripts/download_eloratings.py"
+
 [tasks."dbt:build"]
 description = "Build and test the dbt models into data/warehouse.duckdb"
 dir = "{{config_root}}/dbt"

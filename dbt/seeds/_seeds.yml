@@ -59,3 +59,25 @@ seeds:
         data_tests: [not_null]
       - name: football_data_name
         data_tests: [not_null]
+
+  - name: international_results_files
+    description: >
+      The martj42/international_results data version: sha256 and size of each
+      stored CSV, written by scripts/download_international_results.py (commit
+      pinned there).
+    config:
+      column_types:
+        file: varchar
+        sha256: varchar
+        bytes: bigint
+
+  - name: eloratings_files
+    description: >
+      The eloratings.net data version: sha256 and size of each stored .tsv file,
+      written by scripts/download_eloratings.py.
+    config:
+      column_types:
+        file: varchar
+        sha256: varchar
+        bytes: bigint
+
