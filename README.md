@@ -43,7 +43,7 @@ mise run dashboard         # local, http://127.0.0.1:8501
 mise run dashboard:deploy  # container on the VPS, https://football.pascalkraus.com
 ```
 
-Scores, log loss by season, the gap to a reference model, calibration and runs, read from the stores read-only. Holdout seasons never reach it. The public route sits behind the GitHub login in `server-infra` (Caddy route and Cloudflare DNS record there).
+Scores, log loss by season, the gap to a reference model, calibration and runs, read from the stores read-only. A Glossary page explains the terms and each model (`src/football_forecasting/glossary.md`). Holdout seasons never reach it. The public route sits behind the GitHub login in `server-infra` (Caddy route and Cloudflare DNS record there).
 
 ## Phases
 
