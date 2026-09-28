@@ -232,10 +232,49 @@ def test_should_score_development_reliable_non_friendly():
     assert not neb.should_score(too_late)
 
 
-def test_run_refuses_validation_or_later_matches():
-    holdout_era = make_match("m1", date(2020, 1, 1), "A", "B", 1, 0)
-    with pytest.raises(ValueError, match="validation"):
+def test_run_accepts_validation_matches():
+    validation_era = make_match("m1", date(2020, 1, 1), "A", "B", 1, 0)
+    neb.run([validation_era])  # does not raise
+
+
+def test_run_refuses_holdout_or_later_matches():
+    holdout_era = make_match("m1", date(2024, 7, 15), "A", "B", 1, 0)
+    with pytest.raises(ValueError, match="holdout"):
         neb.run([holdout_era])
+
+
+def test_run_with_should_score_validation_only_scores_validation_finals():
+    dev_finals = make_match(
+        "d1",
+        date(2018, 6, 1),
+        "A",
+        "B",
+        1,
+        0,
+        finals="WC",
+        edition=2018,
+        tournament="FIFA World Cup",
+    )
+    validation_finals = make_match(
+        "v1",
+        date(2020, 6, 1),
+        "A",
+        "B",
+        1,
+        0,
+        finals="EURO",
+        edition=2020,
+        tournament="UEFA Euro",
+    )
+    validation_competitive = make_match(
+        "v2", date(2020, 6, 2), "A", "B", 1, 0, tournament="FIFA World Cup qualification"
+    )
+    preds, _ = neb.run(
+        [dev_finals, validation_finals, validation_competitive],
+        should_score=neb.should_score_validation,
+    )
+    scored_ids = {p.match_id for p in preds["national-elo-v1"]}
+    assert scored_ids == {"v1"}  # not the development match, not the wider validation set
 
 
 def test_confirm_counts_never_reads_row_detail(tmp_path):

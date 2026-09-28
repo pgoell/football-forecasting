@@ -1,21 +1,23 @@
-"""Development-only walk-forward backtest for national-elo-v1
-(docs/tournament-spec.md, MODEL step).
+"""Walk-forward backtest for national-elo-v1 (docs/tournament-spec.md, MODEL step).
 
-Scores two sets, both restricted to 2006-01-01 to 2019-12-31 (development):
+`should_score` (development, the default) scores two sets, both restricted to 2006-01-01
+to 2019-12-31:
 
 - "tournament": the 369 WC/EURO finals matches the spec scores.
 - "competitive": every non-friendly match with a reliable 90-minute score, the
   spec's wider allowance for tuning, reported apart from "tournament".
 
+`should_score_validation` scores the 166 validation finals matches (EURO 2020, WC 2022,
+EURO 2024, 2020-01-01 to 2024-07-14) once instead, no wider set: validation picks the
+model, it does not tune it.
+
 Predictions are stored immutably (prediction_id, match_id, prediction_as_of,
 model_version, p_home, p_draw, p_away), the same way as the league predictions
 (`backtest.save`), in their own tables since this schema has no horizon or odds.
 
-Refuses matches from 2020-01-01 on (`run` raises); a count-only query confirms
-validation and holdout sizes without reading a single one of their matches
-(docs/tournament-spec.md: "do not print, query or score any match after
-2019-12-31 except to confirm counts"). Validation scoring happens only after
-a review lifts this.
+`run` refuses matches from the holdout on (2024-07-15); a count-only query confirms
+holdout size without reading a single one of its matches (docs/tournament-spec.md: never
+print, query or score it). The holdout run itself happens only once, separately.
 """
 
 import csv
@@ -25,7 +27,7 @@ import math
 import tempfile
 import uuid
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import astuple, dataclass
 from datetime import UTC, datetime, time
 from pathlib import Path
@@ -83,6 +85,17 @@ def should_score(m: NationalMatch) -> bool:
     )
 
 
+def should_score_validation(m: NationalMatch) -> bool:
+    """Validation, finals only (docs/tournament-spec.md, Data periods: EURO 2020, WC 2022,
+    EURO 2024, 166 matches). No wider "all competitive" set: validation picks the model, it
+    is not for tuning, so nothing beyond what the spec scores is scored here."""
+    return (
+        FIRST_VALIDATION_DATE <= m.match_date < FIRST_HOLDOUT_DATE
+        and m.finals is not None
+        and m.score_90_reliable
+    )
+
+
 def _prediction(version: str, m: NationalMatch, p: Probs) -> Prediction:
     key = f"{version}|{m.match_id}"
     return Prediction(
@@ -96,11 +109,16 @@ def _prediction(version: str, m: NationalMatch, p: Probs) -> Prediction:
     )
 
 
-def run(matches: list[NationalMatch]) -> tuple[dict[str, list[Prediction]], dict[str, Recorded]]:
-    """Walk `matches` in date order, predicting every scored match before
-    observing its result. Refuses anything from 2020-01-01 on."""
-    if any(m.match_date >= FIRST_VALIDATION_DATE for m in matches):
-        raise ValueError("validation or later match passed to the development backtest")
+def run(
+    matches: list[NationalMatch], should_score: Callable[[NationalMatch], bool] = should_score
+) -> tuple[dict[str, list[Prediction]], dict[str, Recorded]]:
+    """Walk `matches` in date order, predicting every match `should_score` flags before
+    observing its result (so ratings and the ordered logit stay walk-forward continuous
+    whether or not a given match is itself scored). Refuses anything from the holdout on
+    (2024-07-15, docs/tournament-spec.md: never print, query or score it); `should_score`
+    defaults to development, pass `should_score_validation` once validation is authorized."""
+    if any(m.match_date >= FIRST_HOLDOUT_DATE for m in matches):
+        raise ValueError("holdout match passed to the backtest")
     windows = tournament_windows(matches)
     elo = NationalElo(windows)
     naive = NaiveTournamentBenchmark()
