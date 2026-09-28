@@ -2,7 +2,7 @@
 
 Second milestone of the project. The league experiments closed the betting question: for E0, D1, D2, E1 and E2 no model adds information to the market (`docs/experiment-log.md`, thin-market verdict). The project now forecasts national-team tournaments, with EURO 2028 (9 June to 9 July 2028, UK and Ireland) as the live target. These rules are written before any international data is loaded, so success cannot be redefined after the results come in.
 
-Status: draft 2026-09-28, not frozen. Changes go in the change log with a date and a reason.
+Status: frozen 2026-09-28. Changes go in the change log with a date and a reason.
 
 ## Questions
 
@@ -97,17 +97,17 @@ Confidence intervals: 95%, paired bootstrap, 10,000 draws. Matches: blocks by ma
 
 ## Success criteria
 
-Judged on the holdout (WC 2026); validation picks the model. `X` values are open decisions.
+Judged on the holdout (WC 2026); validation picks the model.
 
 | # | Pass if (holdout) |
 |---|---|
 | M1 | model log loss below naive, CI excludes 0 |
-| M2 | model minus eloratings.net log loss: upper bound below `X1` |
-| M3 | model minus market (`pre`) log loss: upper bound below `X2` |
+| M2 | model minus eloratings.net log loss: upper bound below 0.02 |
+| M3 | model minus market (`pre`) log loss: upper bound below 0.04 |
 | R1 | rounds Brier below naive, CI excludes 0 |
-| R2 | calibration slope on rounds: CI holds 1, point within 1 ± `X3` |
+| R2 | calibration slope on rounds: CI holds 1, point from 0.7 to 1.3 |
 
-The samples are small: 104 holdout matches and 166 validation matches, against 1,200 to 2,200 per league in the thin-market test, so intervals will be about three to five times as wide. Set `X1` to `X3` with that in mind. Three validation tournaments give three winners, so the winner metrics cannot decide anything.
+The samples are small: 104 holdout matches and 166 validation matches, against 1,200 to 2,200 per league in the thin-market test, so intervals will be about three to five times as wide; the bounds above allow for that. In the leagues the market led Elo by about 0.016, so 0.04 leaves room for the wider interval, and 0.02 for our Elo against a near copy of it. Three validation tournaments give three winners, so the winner metrics cannot decide anything.
 
 ## Decisions that follow
 
@@ -137,14 +137,15 @@ The samples are small: 104 holdout matches and 166 validation matches, against 1
 
 ## Open decisions
 
-- [ ] `X1`: allowed gap to eloratings.net in log loss
-- [ ] `X2`: allowed gap to the market in log loss
-- [ ] `X3`: allowed departure of the calibration slope from 1
-- [ ] Rounds metric: Brier primary (proposed) or log loss
-- [ ] Odds purchase: one month for validation now, one more for the holdout run (proposed), or one month for all four tournaments
-- [ ] `P(qualify)` for EURO 2028: scored as a target (proposed, one run, about 55 teams) or shown only
-- [ ] eloratings.net: no terms found; use for private research as for Understat, or ask first
+- [x] Gap to eloratings.net (M2): 0.02 in log loss
+- [x] Gap to the market (M3): 0.04 in log loss
+- [x] Calibration slope (R2): 0.7 to 1.3
+- [x] Rounds metric: Brier primary
+- [x] Odds purchase: one month of the 20K plan for validation; one more for the holdout run only
+- [x] `P(qualify)` for EURO 2028: scored, one run, about 55 teams
+- [x] eloratings.net: used for private research, as with Understat: one request a second, nothing published or passed on; ask before any other use
 
 ## Change log
 
 - 2026-09-28: first draft
+- 2026-09-28: frozen; the owner asked for the open decisions to be settled with the proposed values, and the bounds set at 0.02, 0.04 and 0.7 to 1.3
