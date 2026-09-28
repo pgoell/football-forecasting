@@ -8,9 +8,13 @@ winner from `shootouts.csv` where the 90 minutes, or extra time, were level). If
 format data (groups, bracket template, tie-break order) is wrong, the pairing this
 produces will not match any real match and the lookup below fails loudly.
 
-WC 2026 and EURO 2028 have no `groups` in the format data (the draw is unknown or, for
-2026, out of holdout bounds) and so are never parametrized here (docs/tournament-spec.md,
-Rules against fooling ourselves; HOLDOUT RULE).
+EURO 2028 has no `groups` in the format data (the draw has not happened) and so is never
+parametrized here. WC 2026's real group draw and bracket ARE checked here: this is the
+correctness test of the format the HOLDOUT RUN instructions call for, run once before the
+one holdout scoring run, on the real results already in the warehouse (docs/tournament-spec.md,
+Simulator: "fed the real results of each past tournament, it must reproduce the real group
+tables and bracket"). It never touches match probabilities, ratings or scores, so it does
+not count as a second look at the holdout for the Rules against fooling ourselves.
 """
 
 import itertools
@@ -57,6 +61,7 @@ CHAMPIONS = {
     "euro2016": "portugal",
     "euro2020": "italy",
     "euro2024": "spain",
+    "wc2026": "spain",
 }
 
 
@@ -127,6 +132,7 @@ EDITIONS = [
     ("euro2016", "EURO", 2016),
     ("euro2020", "EURO", 2020),
     ("euro2024", "EURO", 2024),
+    ("wc2026", "WC", 2026),
 ]
 
 # martj42's one known error in `neutral` through 2024-07-14 (docs/data-sources.md, Tournament
@@ -161,9 +167,10 @@ def test_replay_reproduces_the_real_bracket_and_champion(format_id, finals, edit
     assert champion == CHAMPIONS[format_id]
 
 
-def test_wc2026_and_euro2028_have_no_group_draw():
+def test_euro2028_has_no_group_draw():
+    """WC 2026 now carries its real draw (docs/data-sources.md, WC 2026 draw and venues);
+    EURO 2028's has not happened yet."""
     formats = load_formats()
-    assert formats["wc2026"].groups is None
     assert formats["euro2028"].groups is None
 
 

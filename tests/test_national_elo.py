@@ -243,6 +243,17 @@ def test_run_refuses_holdout_or_later_matches():
         neb.run([holdout_era])
 
 
+def test_run_through_widens_the_boundary_for_the_holdout_run_only():
+    """`through` lets the holdout run (`tournament_holdout.py`) in, but nothing past it, and
+    other callers keep refusing the holdout by default (docs/tournament-spec.md, HOLDOUT
+    RUN: no match after 2026-07-19 may enter anything)."""
+    holdout_match = make_match("m1", date(2026, 7, 19), "A", "B", 1, 0)
+    neb.run([holdout_match], through=date(2026, 7, 20))  # does not raise
+    too_late = make_match("m2", date(2026, 7, 20), "A", "B", 1, 0)
+    with pytest.raises(ValueError, match="holdout"):
+        neb.run([holdout_match, too_late], through=date(2026, 7, 20))
+
+
 def test_run_with_should_score_validation_only_scores_validation_finals():
     dev_finals = make_match(
         "d1",

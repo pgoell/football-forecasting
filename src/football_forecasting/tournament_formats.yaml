@@ -648,7 +648,46 @@ editions:
   year: 2026
   shape: wc48
   hosts: [united_states, canada, mexico]
-  groups: null
+  # Real draw (5 December 2025) and match-by-match host country, docs/data-sources.md,
+  # WC 2026 draw and venues. Group letter order here fixes the combinations() order used
+  # by venues.groups below; it carries no other meaning (docs/tournament-spec.md: home
+  # advantage only by real venue, not by this order).
+  groups:
+    A: [mexico, south_africa, south_korea, czech_republic]
+    B: [canada, bosnia_and_herzegovina, qatar, switzerland]
+    C: [brazil, morocco, haiti, scotland]
+    D: [united_states, paraguay, australia, turkey]
+    E: [germany, curacao, ivory_coast, ecuador]
+    F: [netherlands, japan, sweden, tunisia]
+    G: [belgium, egypt, iran, new_zealand]
+    H: [spain, cape_verde, saudi_arabia, uruguay]
+    I: [france, senegal, iraq, norway]
+    J: [argentina, algeria, austria, jordan]
+    K: [portugal, colombia, dr_congo, uzbekistan]
+    L: [england, croatia, ghana, panama]
+  venues:
+    groups:
+      A: [mexico, mexico, mexico, mexico, united_states, mexico]
+      B: [canada, canada, canada, united_states, united_states, united_states]
+      C: [united_states, united_states, united_states, united_states, united_states, united_states]
+      D: [united_states, united_states, united_states, united_states, united_states, canada]
+      E: [united_states, canada, united_states, united_states, united_states, united_states]
+      F: [united_states, united_states, united_states, united_states, mexico, mexico]
+      G: [united_states, united_states, canada, united_states, canada, united_states]
+      H: [united_states, united_states, mexico, united_states, united_states, united_states]
+      I: [united_states, united_states, united_states, canada, united_states, united_states]
+      J: [united_states, united_states, united_states, united_states, united_states, united_states]
+      K: [united_states, united_states, united_states, mexico, mexico, united_states]
+      L: [united_states, united_states, united_states, united_states, canada, canada]
+    knockout:
+      round_of_32: [united_states, united_states, united_states, mexico, canada, united_states,
+        united_states, united_states, united_states, united_states, mexico, united_states,
+        united_states, united_states, canada, united_states]
+      round_of_16: [united_states, united_states, united_states, united_states, united_states,
+        mexico, united_states, canada]
+      quarterfinal: [united_states, united_states, united_states, united_states]
+      semifinal: [united_states, united_states]
+      final: [united_states]
 - id: euro2008
   kind: EURO
   year: 2008

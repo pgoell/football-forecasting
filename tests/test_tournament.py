@@ -35,8 +35,7 @@ def test_load_formats_are_internally_consistent():
         assert len(set().union(*fmt.groups.values())) == 4 * len(fmt.groups)
         slots = 2 * len(fmt.groups) + fmt.third_place_advance
         assert 2 * len(fmt.knockout_seeds) == slots
-    assert formats["wc2026"].groups is None
-    assert formats["euro2028"].groups is None
+    assert formats["euro2028"].groups is None  # not drawn yet; wc2026 carries its real draw
     wc2026_table = formats["wc2026"].third_place_table
     euro2016_table = formats["euro2016"].third_place_table
     assert wc2026_table is not None and len(wc2026_table) == 495

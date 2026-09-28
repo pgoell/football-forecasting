@@ -144,19 +144,26 @@ class RoundRow:
     runs: int
 
 
-def round_rows(warehouse: Path = WAREHOUSE, predictions: Path = PREDICTIONS) -> list[RoundRow]:
-    """One row per model, tournament, team and round (`ROUNDS`, not "win": scored under
-    winner instead), the model's stored forecast and the real outcome."""
+def round_rows(
+    warehouse: Path = WAREHOUSE,
+    predictions: Path = PREDICTIONS,
+    editions: Sequence[tuple[str, str, int]] = VALIDATION_EDITIONS,
+    rounds: Sequence[str] = ROUNDS,
+) -> list[RoundRow]:
+    """One row per model, tournament, team and round (`rounds`, not "win": scored under
+    winner instead), the model's stored forecast and the real outcome. `editions`/`rounds`
+    default to validation; `tournament_holdout.py` passes WC 2026 and its extra round
+    (round of 32, 48-team format), the same function and math either way."""
     formats = load_formats()
     con_wh = duckdb.connect(str(warehouse), read_only=True)
     con_pred = duckdb.connect(str(predictions), read_only=True)
     rows = []
-    for format_id, finals, edition in VALIDATION_EDITIONS:
+    for format_id, finals, edition in editions:
         truth, _ = real_reach(formats[format_id], con_wh, finals, edition)
         stored = con_pred.execute(
             "select model_version, team, round, p, runs from tournament_predictions"
             " where tournament = ? and round = any(?)",
-            [format_id, list(ROUNDS)],
+            [format_id, list(rounds)],
         ).fetchall()
         for model_version, team, round_name, p, runs in stored:
             rows.append(
@@ -169,14 +176,19 @@ def round_rows(warehouse: Path = WAREHOUSE, predictions: Path = PREDICTIONS) -> 
     return rows
 
 
-def champion_rows(warehouse: Path = WAREHOUSE, predictions: Path = PREDICTIONS) -> list[RoundRow]:
+def champion_rows(
+    warehouse: Path = WAREHOUSE,
+    predictions: Path = PREDICTIONS,
+    editions: Sequence[tuple[str, str, int]] = VALIDATION_EDITIONS,
+) -> list[RoundRow]:
     """One row per model, tournament and team, the model's stored "win" forecast and
-    whether that team was the real champion."""
+    whether that team was the real champion. `editions` defaults to validation;
+    `tournament_holdout.py` passes WC 2026."""
     formats = load_formats()
     con_wh = duckdb.connect(str(warehouse), read_only=True)
     con_pred = duckdb.connect(str(predictions), read_only=True)
     rows = []
-    for format_id, finals, edition in VALIDATION_EDITIONS:
+    for format_id, finals, edition in editions:
         _, champion = real_reach(formats[format_id], con_wh, finals, edition)
         stored = con_pred.execute(
             "select model_version, team, p, runs from tournament_predictions"
@@ -254,9 +266,12 @@ def blocks_of(rows: Sequence[RoundRow]) -> np.ndarray:
 
 
 def rounds_report(rows: list[RoundRow]) -> str:
+    """`rows` from `round_rows`: validation's 3 tournaments or (`tournament_holdout.py`)
+    WC 2026 alone, same math either way."""
+    n_tournaments = len({r.tournament for r in rows})
     lines = [
-        f"n = {len({(r.team, r.tournament) for r in rows})} teams across 3 tournaments, "
-        f"{len(rows)} team-round rows"
+        f"n = {len({(r.team, r.tournament) for r in rows})} teams across {n_tournaments} "
+        f"tournament{'s' if n_tournaments != 1 else ''}, {len(rows)} team-round rows"
     ]
     by_model = {m: [r for r in rows if r.model == m] for m in MODELS}
     p = {m: np.array([r.p for r in rs]) for m, rs in by_model.items()}
@@ -289,10 +304,12 @@ def rounds_report(rows: list[RoundRow]) -> str:
     return "\n".join(lines)
 
 
-def winner_report(rows: list[RoundRow]) -> str:
+def winner_report(
+    rows: list[RoundRow], editions: Sequence[tuple[str, str, int]] = VALIDATION_EDITIONS
+) -> str:
     lines = ["| model | tournament | champion log loss | Brier (all teams) |", "|---|---|---|---|"]
     for m in MODELS:
-        for format_id, _, _ in VALIDATION_EDITIONS:
+        for format_id, _, _ in editions:
             these = [r for r in rows if r.model == m and r.tournament == format_id]
             champ = next(r for r in these if r.y)
             ll = -np.log(max(champ.p, 1 / (2 * champ.runs)))

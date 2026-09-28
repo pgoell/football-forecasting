@@ -59,6 +59,10 @@ run = "uv run python -m football_forecasting.tournament_run"
 description = "Score national-elo-v1 on validation (EURO 2020, WC 2022, EURO 2024): match and rounds metrics, bootstrap CIs, success criteria as they read on validation. Run tournament:forecast first. Never touches the holdout (docs/tournament-spec.md)"
 run = "uv run python -m football_forecasting.tournament_validation"
 
+[tasks."tournament:holdout"]
+description = "HOLDOUT RUN, once: forecast and score national-elo-v1 on WC 2026 (104 finals matches), match and rounds metrics, bootstrap CIs, the real success criteria (docs/tournament-spec.md)"
+run = "uv run python -m football_forecasting.tournament_holdout"
+
 [tasks.dashboard]
 description = "Serve the backtest dashboard on localhost:8501"
 run = "uv run streamlit run src/football_forecasting/dashboard.py --server.address 127.0.0.1 --server.headless true"

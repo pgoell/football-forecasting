@@ -29,7 +29,7 @@ import uuid
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from dataclasses import astuple, dataclass
-from datetime import UTC, datetime, time
+from datetime import UTC, date, datetime, time
 from pathlib import Path
 from typing import Protocol
 
@@ -110,15 +110,20 @@ def _prediction(version: str, m: NationalMatch, p: Probs) -> Prediction:
 
 
 def run(
-    matches: list[NationalMatch], should_score: Callable[[NationalMatch], bool] = should_score
+    matches: list[NationalMatch],
+    should_score: Callable[[NationalMatch], bool] = should_score,
+    through: date = FIRST_HOLDOUT_DATE,
 ) -> tuple[dict[str, list[Prediction]], dict[str, Recorded]]:
     """Walk `matches` in date order, predicting every match `should_score` flags before
     observing its result (so ratings and the ordered logit stay walk-forward continuous
-    whether or not a given match is itself scored). Refuses anything from the holdout on
-    (2024-07-15, docs/tournament-spec.md: never print, query or score it); `should_score`
-    defaults to development, pass `should_score_validation` once validation is authorized."""
-    if any(m.match_date >= FIRST_HOLDOUT_DATE for m in matches):
-        raise ValueError("holdout match passed to the backtest")
+    whether or not a given match is itself scored). Refuses anything on or after `through`
+    (default 2024-07-15, the holdout's start: docs/tournament-spec.md, never print, query or
+    score it before the holdout run); `should_score` defaults to development, pass
+    `should_score_validation` once validation is authorized, or `should_score_holdout` with
+    `through` widened to the day after the holdout's last match (`tournament_holdout.py`),
+    never further."""
+    if any(m.match_date >= through for m in matches):
+        raise ValueError(f"match on or after {through} passed to the backtest (holdout boundary)")
     windows = tournament_windows(matches)
     elo = NationalElo(windows)
     naive = NaiveTournamentBenchmark()

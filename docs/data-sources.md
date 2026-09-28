@@ -456,10 +456,10 @@ applies and where real venues are used instead.
 
 Six of the seven tournaments checked here are single-host: every match, group and
 knockout, was played in the host country (WC 2006, 2010, 2014, 2018, 2022; EURO 2024),
-recorded as `venue` in `tournament_formats.yaml`. WC 2026 (three hosts) and EURO 2028
-(four hosts) have no group draw yet either, so this does not apply to them; EURO 2028's
-`home_of` uses the fallback rule until the draw and the venue schedule are known (both
-due after the spec is frozen).
+recorded as `venue` in `tournament_formats.yaml`. EURO 2028 (four hosts) has no group draw
+yet, so `home_of` uses the fallback rule until the draw and the venue schedule are known
+(both due after the spec is frozen). WC 2026 (three hosts) has its own venue schedule: see
+below.
 
 EURO 2020 is the exception: 11 host cities in 11 countries (9 with a team in the
 tournament; Azerbaijan and Romania are not), so venue country varies match by match
@@ -493,6 +493,40 @@ Wales did not play a single tournament match at home. Recorded as
 Elo ratings still read `neutral` from martj42 directly (docs/tournament-spec.md's
 model step, not the simulator), so this one match keeps a small, undetected home-advantage
 error there, immaterial against 369 development finals matches.
+
+### WC 2026 draw and venues (checked, tested)
+
+Checked 2026-09-28, for the HOLDOUT RUN. The real group draw (5 December 2025) and the
+host country of every match were entered into `tournament_formats.yaml`'s `wc2026` edition
+from Wikipedia's "2026 FIFA World Cup" group articles (`2026 FIFA World Cup Group A`
+through `Group L`, e.g.
+<https://en.wikipedia.org/wiki/2026_FIFA_World_Cup_Group_A>) and FIFA's own tournament
+site (<https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026>), the same
+two kinds of source as every earlier tournament in this document.
+
+Cross-checked against martj42/international_results, the same way as the ten development
+and validation tournaments: clustering the 72 real group-stage matches (2026-06-11 to
+2026-06-27) into round-robin groups of 4 by opponent reproduces exactly the 12 Wikipedia
+groups, with the same 48 teams, no mismatch. The host country of each of the 104 real
+matches (`results.csv`'s own `country` column, already joined in as
+`int_international_matches.country`) matches the group and knockout venue lists now in
+`tournament_formats.yaml` for every match: `home_of`, fed this venue data, agrees with
+`neutral`/`home_team_id` for all 104 (folded into
+`tests/test_tournament_replay.py::test_home_of_agrees_with_martj42_neutral_flag`, now
+covering `wc2026` too, no exception needed).
+
+The round-of-32 seed-to-team mapping (`knockout_seeds`, and which row of the 495-row
+third-place table applies) was not typed in by hand: it falls out of running the existing
+`standings()` / `bracket_slots()` / `walk()` code on the real group results, the same
+"replay" the HOLDOUT RUN instructions call for as a correctness check of the format before
+any scoring. It reproduces the real bracket exactly, real pairing by real pairing, and the
+real champion (Spain, beating Argentina 1-0 in the final; France beat England in the
+third-place match) with no fair-play override needed anywhere: every group's tie-break
+resolves by points, head-to-head or goal difference alone (WC 2026 uses the UEFA-style
+order, `RULESETS["wc2026"]`), unlike WC 2018 and EURO 2024's one group each. This replay
+uses real WC 2026 results already in the warehouse; it checks the format data only (groups,
+bracket template, venues), makes no model or scoring choice, and so is not a second look at
+the holdout for docs/tournament-spec.md's Rules against fooling ourselves.
 
 ## Open checks
 
