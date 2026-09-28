@@ -238,6 +238,21 @@ def test_run_refuses_validation_or_later_matches():
         neb.run([holdout_era])
 
 
+def test_confirm_counts_never_reads_row_detail(tmp_path):
+    matches = [
+        make_match("m1", date(2019, 12, 31), "A", "B", 1, 0, finals="WC", edition=2018),  # dev
+        make_match("m2", date(2020, 1, 1), "A", "B", 1, 0, finals="WC", edition=2020),  # validation
+        make_match(
+            "m3", date(2024, 7, 14), "A", "B", 1, 0, finals="EURO", edition=2024
+        ),  # validation
+        make_match("m4", date(2024, 7, 15), "A", "B", 1, 0, finals="WC", edition=2026),  # holdout
+    ]
+    path = warehouse(tmp_path, matches)
+    text = neb.confirm_counts(path)
+    assert "validation finals matches: 2" in text
+    assert "holdout finals matches: 1" in text
+
+
 def test_stored_predictions_never_change(tmp_path):
     matches = [
         make_match(
