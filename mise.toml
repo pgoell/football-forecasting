@@ -26,6 +26,12 @@ description = "Build and test the dbt models into data/warehouse.duckdb"
 dir = "{{config_root}}/dbt"
 run = "uv run dbt build --profiles-dir ."
 
+# ─── Backtest ───────────────────────────────────────────────────────────────
+
+[tasks.backtest]
+description = "Run the walk-forward backtest, store predictions, print scores"
+run = "uv run python -m football_forecasting.backtest"
+
 # ─── Testing ────────────────────────────────────────────────────────────────
 
 [tasks.test]
