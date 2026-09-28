@@ -95,3 +95,65 @@ Without `pre_timing_uncertain` matches (pre only; close is unchanged): developme
 - Elo errs the other way on home favourites (54.7% forecast, 50.7% observed) and underrates away teams overall (28.5% against 29.8%).
 
 Reading: results-only Elo and goal-based models carry about the same information; neither is near the market. Phase 3 exit criterion answered. Candidates for a `-v2`, to tune on development seasons only: a weaker penalty or shorter window for the favourite bias, and xi chosen on development.
+
+## 2026-09-28: question 2b, market-aware models
+
+Data seen: development and validation seasons (2005/06 to 2022/23), through the stored predictions of `market-consensus-v1`, `elo-v1` and `dixon-coles-v1`. The holdout is never loaded. No base model is refit; nothing was tuned.
+
+Models (`src/football_forecasting/market_aware.py`):
+
+- `market-elo-v1`, `market-dc-v1`: a multinomial logit on the stored forecasts at the same horizon, `P(k) ∝ exp(a * log p_market[k] + b * log p_model[k] + c[k])`, `c[A] = 0`, with `elo-v1` or `dixon-coles-v1` as the model. `b` is the weight our model gets; `a = 1, b = 0, c = 0` returns the market. No other features.
+- Fitted by plain maximum likelihood, no penalty, per horizon, both leagues together, before each season on all earlier seasons from 2005/06. Four parameters on at least 686 matches: the fit is well defined without a penalty.
+- The first season of each horizon has nothing to fit on, so forecasts start in 2006/07 at `pre` and 2013/14 at `close` (market closing odds start in 2012/13). `pre_timing_uncertain` matches stay in every fit; they are left out only in the scoring below.
+
+Log loss minus market, paired over the matches all three predicted, 95% bootstrap interval over matchdays (`uv run research/market-aware-check/check.py`; same method as `research/goal-models-check/`, now `report.bootstrap`):
+
+| Period | Horizon | n | Market | market-elo − Market | market-dc − Market |
+|---|---|---|---|---|---|
+| development | pre | 8,918 | 0.9744 | +0.0006 (−0.0008, +0.0020) | +0.0005 (−0.0007, +0.0018) |
+| development | close | 4,115 | 0.9602 | +0.0024 (+0.0007, +0.0042) | +0.0024 (+0.0009, +0.0041) |
+| validation | pre | 2,744 | 0.9769 | +0.0008 (−0.0003, +0.0019) | +0.0009 (−0.0001, +0.0019) |
+| validation | close | 2,744 | 0.9745 | +0.0002 (−0.0003, +0.0007) | +0.0003 (−0.0002, +0.0008) |
+
+Without `pre_timing_uncertain` matches (pre only; close is unchanged): development pre n 8,407, +0.0004 (−0.0010, +0.0017) and +0.0003 (−0.0010, +0.0016); validation pre n 2,600, +0.0009 (−0.0003, +0.0021) and +0.0010 (−0.0001, +0.0021). No conclusion changes.
+
+**Criterion 2b: fails on validation.** Neither variant beats the market; both point estimates are slightly worse and every interval holds 0. In development at `close` both are worse with the interval clear of 0: the loss comes from 2013/14 to 2016/17 (+0.007, +0.004, +0.001, +0.002), when the fit had only 686 to 2,744 Pinnacle closing matches and gave our model weight 0.1 to 0.4. From 2017/18 the per-season gap stays within ±0.001.
+
+Fitted weights, selected seasons (all seasons: the check script):
+
+| Variant | Horizon | Season fitted for | n fit | a (market) | b (model) | c_home | c_draw |
+|---|---|---|---|---|---|---|---|
+| market-elo | pre | 2006/07 | 686 | 1.816 | −0.428 | −0.015 | +0.033 |
+| market-elo | pre | 2012/13 | 4,802 | 1.126 | −0.053 | +0.054 | +0.035 |
+| market-elo | pre | 2019/20 | 9,604 | 1.127 | −0.068 | +0.053 | +0.027 |
+| market-elo | pre | 2022/23 | 11,662 | 1.112 | −0.079 | +0.042 | +0.012 |
+| market-elo | close | 2013/14 | 686 | 0.889 | +0.343 | −0.206 | +0.110 |
+| market-elo | close | 2019/20 | 4,801 | 1.020 | −0.013 | +0.046 | +0.015 |
+| market-elo | close | 2022/23 | 6,859 | 1.034 | −0.046 | +0.026 | −0.007 |
+| market-dc | pre | 2006/07 | 686 | 1.491 | −0.185 | −0.017 | +0.047 |
+| market-dc | pre | 2012/13 | 4,802 | 1.056 | +0.020 | +0.045 | +0.035 |
+| market-dc | pre | 2019/20 | 9,604 | 1.070 | −0.008 | +0.043 | +0.026 |
+| market-dc | pre | 2022/23 | 11,662 | 1.026 | +0.018 | +0.027 | +0.010 |
+| market-dc | close | 2013/14 | 686 | 0.870 | +0.397 | −0.183 | +0.114 |
+| market-dc | close | 2019/20 | 4,801 | 1.009 | +0.000 | +0.043 | +0.015 |
+| market-dc | close | 2022/23 | 6,859 | 0.983 | +0.017 | +0.014 | −0.009 |
+
+**How much weight does our model get?** Almost none, once the fit has a few thousand matches. `b` for Dixon-Coles stays between −0.01 and +0.08 at `pre` from 2012/13 and between 0.00 and +0.06 at `close` from 2017/18; for Elo it drifts from 0.00 to −0.08 at `pre` from 2013/14, so the fit moves slightly away from Elo where Elo disagrees with the market. **Is it stable?** Only after a few seasons of data. The first fits swing widely (`b` from −0.45 to +0.40, `a` up to 1.8, `a` and `b` trading off because the two inputs are highly correlated), then settle. What the fit does keep is a small recalibration of the market itself: at `pre` from 2012/13, `a` is 1.02 to 1.13 (the pre-match market is slightly too cautious) and `c_home` +0.01 to +0.06 (it slightly underrates home wins). Both variants gain and lose in the same seasons: the gains and losses come from this recalibration, not from our models. It cost 0.002 at `pre` in each of 2019/20 and 2020/21, seasons played partly or wholly without crowds, where a push toward home wins likely hurt.
+
+**Does disagreement carry information?** No. Matches binned by `p_model − p_market` for the home win, observed home-win rate against the market's forecast (development and validation pooled per row, `pre`; points):
+
+| Gap, points | Elo: n | Elo: observed − market | DC: n | DC: observed − market |
+|---|---|---|---|---|
+| < −10 | 239 | +0.024 | 722 | −0.008 |
+| −10 to −6 | 666 | +0.005 | 1,321 | +0.014 |
+| −6 to −3 | 1,153 | +0.023 | 1,633 | +0.015 |
+| −3 to −1 | 1,276 | +0.014 | 1,294 | +0.015 |
+| −1 to +1 | 1,552 | +0.011 | 1,451 | +0.008 |
+| +1 to +3 | 1,787 | +0.012 | 1,554 | +0.009 |
+| +3 to +6 | 2,418 | +0.009 | 1,966 | +0.013 |
+| +6 to +10 | 2,082 | +0.015 | 1,655 | +0.018 |
+| > +10 | 1,175 | −0.011 | 752 | −0.005 |
+
+If our model knew something, `observed − market` would rise from the top of the table to the bottom. It stays flat, at about +0.01 in every bin: the market's general underrating of home wins in these seasons, the same as `c_home`, whatever the model says. The biggest disagreements (over 10 points) come out slightly below the market, not above. The slope of `observed − market` on the gap, per period and horizon, is between −0.11 and −0.01 for Elo and between −0.01 and +0.07 for Dixon-Coles (1 would mean the model is right, 0 that it adds nothing). Every bin lies within its own 95% margin of 0 (±0.02 to ±0.13; full tables by period and horizon, with and without `pre_timing_uncertain`, in the check script's output). `close` shows the same picture.
+
+Reading: our results-only models add nothing measurable to the market at either horizon. What little a blend gains comes from recalibrating the market, and even that does not survive out of sample. Criterion 2b fails on validation, as the spec expected; there is no holdout run to make. Question 3 (CLV) is still worth running, since it tests the betting rule directly, but with no forecasting edge a positive CLV would more likely point to stale bet365 prices than to our models.
