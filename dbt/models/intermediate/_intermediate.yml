@@ -16,6 +16,15 @@ models:
       - name: pre_timing_uncertain
         description: match from 20 Dec to 5 Jan, where pre_at may be too early
         data_tests: [not_null]
+      - name: home_rest_days
+        description: >
+          days since the team's previous league match (any season, so the first
+          match of a season counts the summer break); null for its first match in the files
+      - name: home_matches_14d
+        description: the team's league matches in the 14 days before this one
+        data_tests: [not_null]
+      - name: away_matches_14d
+        data_tests: [not_null]
 
   - name: int_odds
     description: Odds with available_at and margin-free probabilities (normalized 1/odds).

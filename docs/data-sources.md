@@ -74,6 +74,20 @@ Source: <https://www.football-data.co.uk/data.php>, archived <https://web.archiv
 
 notes.txt says only "Time = Time of match kick off". The Bundesliga's most common Saturday time in the files is 14:30, which is its 15:30 German-time slot, so times are UK local time. Test: `kickoff_times_are_uk_time`.
 
+### Shots and shots on target (tested)
+
+> "HS = Home Team Shots / AS = Away Team Shots / HST = Home Team Shots on Target / AST = Away Team Shots on Target"
+
+Source: <https://www.football-data.co.uk/notes.txt> (four lines, joined here), archived <https://web.archive.org/web/20260928135540/https://football-data.co.uk/notes.txt>. The same file does not say who counts shots or by what definition since 2002/03 (**unverified**).
+
+Coverage in our files, counted: every E0 season from 2000/01; D1 has no shots in 2002/03 and no shots on target from 2002/03 to 2005/06. D1 Union Berlin v Bochum on 14/12/2024, an awarded result, has none. Tests: `shots_coverage` (each season has them for every match or none, gaps as listed), `shots_on_target_within_shots` (warns: 3 E0 rows from the source have more shots on target than shots).
+
+Shots count as known with the result (`result_at`).
+
+### Rest days (derived)
+
+`int_matches.home_rest_days` and `away_rest_days`: days since the team's previous match in the files; `home_matches_14d` and `away_matches_14d`: its matches in the 14 days before. Fixture dates are known in advance, so both are known before the match. The files hold league matches only, so cup and European games, the usual cause of short rest, are missing: in 60% of development matches both teams have the same rest, counting any break over a week as 8 days.
+
 ### Terms of use (unverified wording)
 
 The research agent reported the site allows private, non-commercial use only. The exact wording was not re-checked.
