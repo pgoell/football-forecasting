@@ -32,7 +32,15 @@ from football_forecasting.data import (
     Odds,
     load,
 )
-from football_forecasting.models import DixonColes, Elo, MarketConsensus, Model, Naive, Poisson
+from football_forecasting.models import (
+    DixonColes,
+    Elo,
+    MarketConsensus,
+    Model,
+    Naive,
+    Poisson,
+    ShotsDixonColes,
+)
 from football_forecasting.report import report
 
 HORIZONS = ("pre", "close")
@@ -225,7 +233,14 @@ def save(
 
 def main() -> None:
     matches, odds = load()
-    models: list[Model] = [Naive(), MarketConsensus(), Elo(), Poisson(), DixonColes()]
+    models: list[Model] = [
+        Naive(),
+        MarketConsensus(),
+        Elo(),
+        Poisson(),
+        DixonColes(),
+        ShotsDixonColes(),
+    ]
     predictions = run(models, matches, odds)
     seasons = sorted(m.fixture.season for m in matches)
     new = save(predictions, models, f"{seasons[0]}..{seasons[-1]}")

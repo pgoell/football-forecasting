@@ -35,6 +35,12 @@ class Match:
     pre_at: datetime
     close_at: datetime
     result_at: datetime
+    # home, away; None in seasons without them (D1 2002/03 to 2005/06)
+    shots_on_target: tuple[int, int] | None = None
+
+
+def pair(home: int | None, away: int | None) -> tuple[int, int] | None:
+    return None if home is None or away is None else (home, away)
 
 
 @dataclass(frozen=True)
@@ -52,11 +58,20 @@ def load(warehouse: Path = WAREHOUSE) -> tuple[list[Match], dict[str, list[Odds]
     """Every match before the holdout, and its odds by match_id."""
     con = duckdb.connect(str(warehouse), read_only=True)
     matches = [
-        Match(Fixture(*row[:5]), row[5], (row[6], row[7]), *row[8:])
+        Match(
+            Fixture(*row[:5]),
+            row[5],
+            (row[6], row[7]),
+            row[8],
+            row[9],
+            row[10],
+            pair(row[11], row[12]),
+        )
         for row in con.execute(
             """
             select match_id, league, season, home_team, away_team,
-                result, home_goals, away_goals, pre_at, close_at, result_at
+                result, home_goals, away_goals, pre_at, close_at, result_at,
+                home_shots_on_target, away_shots_on_target
             from int_matches
             where season < ?
             order by match_id

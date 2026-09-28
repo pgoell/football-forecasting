@@ -11,7 +11,11 @@ with typed as (
         FTAG::int as away_goals,
         FTR as result,
         HTHG::int as home_goals_ht,
-        HTAG::int as away_goals_ht
+        HTAG::int as away_goals_ht,
+        HS::int as home_shots,
+        "AS"::int as away_shots,
+        HST::int as home_shots_on_target,
+        AST::int as away_shots_on_target
     from {{ ref('base_football_data') }}
 )
 

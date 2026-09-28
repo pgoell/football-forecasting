@@ -15,6 +15,7 @@ from scipy.stats import poisson
 from football_forecasting.data import Fixture, Match, Odds
 
 Probs = tuple[float, float, float]
+Row = tuple[str, str, str, int, int, float, tuple[int, int] | None]
 OUTCOMES = ("H", "D", "A")
 
 
@@ -190,15 +191,18 @@ class Poisson:
             "promoted_defence": promoted_defence,
             "sd": sd,
         }
-        # (league) -> rows of (season, home, away, home goals, away goals, result_at in days)
-        self.results: dict[str, list[tuple[str, str, str, int, int, float]]] = defaultdict(list)
+        # (league) -> rows of (season, home, away, home goals, away goals, result_at in days,
+        # shots on target or None)
+        self.results: dict[str, list[Row]] = defaultdict(list)
         self.teams: dict[tuple[str, str], set[str]] = defaultdict(set)  # (league, season)
         self.fits: dict[str, tuple[int, str, dict[str, int], np.ndarray]] = {}
 
     def observe(self, match: Match) -> None:
         f = match.fixture
         days = match.result_at.timestamp() / 86400
-        self.results[f.league].append((f.season, f.home_team, f.away_team, *match.goals, days))
+        self.results[f.league].append(
+            (f.season, f.home_team, f.away_team, *match.goals, days, match.shots_on_target)
+        )
         self.teams[f.league, f.season] |= {f.home_team, f.away_team}
 
     def target(self, league: str, season: str, team: str) -> tuple[float, float]:
@@ -225,9 +229,14 @@ class Poisson:
             target,
             self.sd,
             self.low_score,
+            self.counts(rows),
         )
         self.fits[league] = (len(results), season, teams, params)
         return teams, params
+
+    def counts(self, rows: list[Row]) -> tuple[np.ndarray, np.ndarray] | None:
+        """What the rates are fitted to, home and away; None for the goals."""
+        return None
 
     def predict(
         self, fixture: Fixture, horizon: str, as_of: datetime, odds: list[Odds]
@@ -263,6 +272,34 @@ class DixonColes(Poisson):
     low_score = True
 
 
+class ShotsDixonColes(DixonColes):
+    """Dixon-Coles with the rates fitted to a blend of goals and shots on target:
+
+        count = (1 - w) * goals + w * c * shots on target
+
+    c is the league's goals per shot on target in the fit window, so both parts
+    count goals. w = 1 fits on shots on target alone, w = 0 is dixon-coles-v1.
+    Shots on target are the more stable signal of how well a team plays; goals
+    add finishing and luck. Matches without shots on target (D1 2002/03 to
+    2005/06) count their goals. The low-score factor still uses the score.
+    w chosen on development seasons (research/shots-weight/)."""
+
+    version = "shots-dc-v1"
+
+    def __init__(self, shots_weight: float = 0.25) -> None:
+        super().__init__()
+        self.w = shots_weight
+        self.params["shots_weight"] = shots_weight
+
+    def counts(self, rows: list[Row]) -> tuple[np.ndarray, np.ndarray]:
+        goals = np.array([r[3:5] for r in rows], dtype=float)
+        known = np.array([r[6] is not None for r in rows])
+        shots = np.array([r[6] or (0, 0) for r in rows], dtype=float)
+        c = goals[known].sum() / max(shots[known].sum(), 1)
+        blend = np.where(known[:, None], (1 - self.w) * goals + self.w * c * shots, goals)
+        return blend[:, 0], blend[:, 1]
+
+
 def tau(hg: np.ndarray, ag: np.ndarray, mu, nu, rho):
     """Dixon-Coles factor on the Poisson probability of each score, with its
     derivatives by log(mu), log(nu) and rho."""
@@ -286,10 +323,13 @@ def fit_goals(
     target: np.ndarray,
     sd: float,
     low_score: bool,
+    counts: tuple[np.ndarray, np.ndarray] | None = None,
 ) -> np.ndarray:
     """Penalized weighted maximum likelihood; returns (mean, home, rho, attack..., defence...).
-    Teams are indices into target = (attack targets..., defence targets...)."""
+    Teams are indices into target = (attack targets..., defence targets...). The
+    rates fit `counts` (home, away), goals if None; the low-score factor uses goals."""
     n = len(target) // 2
+    home_counts, away_counts = counts if counts is not None else (home_goals, away_goals)
 
     def loss(params: np.ndarray) -> tuple[float, np.ndarray]:
         mean, home_adv, rho = params[:3]
@@ -297,8 +337,8 @@ def fit_goals(
         log_mu = mean + home_adv + attack[home] + defence[away]
         log_nu = mean + attack[away] + defence[home]
         mu, nu = np.exp(log_mu), np.exp(log_nu)
-        ll = home_goals * log_mu - mu + away_goals * log_nu - nu
-        d_mu, d_nu = home_goals - mu, away_goals - nu
+        ll = home_counts * log_mu - mu + away_counts * log_nu - nu
+        d_mu, d_nu = home_counts - mu, away_counts - nu
         d_rho = np.zeros_like(mu)
         if low_score:
             t, t_mu, t_nu, t_rho = tau(home_goals, away_goals, mu, nu, rho)
@@ -316,7 +356,7 @@ def fit_goals(
         grad[3:] += off / sd**2
         return -(weights * ll).sum() + (off**2).sum() / (2 * sd**2), grad
 
-    x0 = np.concatenate([[math.log(max(home_goals.mean(), 0.1)), 0.25, 0.0], target])
+    x0 = np.concatenate([[math.log(max(home_counts.mean(), 0.1)), 0.25, 0.0], target])
     bounds = [(None, None), (None, None), (-0.3, 0.3) if low_score else (0, 0)]
     bounds += [(None, None)] * (2 * n)
     return minimize(loss, x0, jac=True, method="L-BFGS-B", bounds=bounds).x

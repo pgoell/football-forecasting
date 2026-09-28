@@ -86,6 +86,15 @@ The poisson model with two changes, after Dixon and Coles (1997).
 - **Recent matches count more.** A match's weight halves every year or so (decay 0.0065 per half week, the value from the paper, not tuned).
 - **Low scores.** Plain Poisson gets 0-0, 1-0, 0-1 and 1-1 slightly wrong. A fitted factor (rho) corrects those four scores, which mostly moves chance toward draws.
 
+### shots-dc
+
+The dixon-coles model, fitted to a blend of goals and shots on target instead of goals alone.
+
+- **Why.** Goals are rare, so a team's goal record is noisy: a few lucky or unlucky finishes move it a lot. Shots on target come three to four times as often and say more about how well a team played.
+- **How.** Each match counts `(1 − w) × goals + w × c × shots on target` for each team, where `c` turns shots on target into goals: the league's goals per shot on target in the fitted seasons (about 0.25 in the Premier League, 0.29 in the Bundesliga). With **w = 0.25** a quarter of the weight is on shots; the rest of the model is dixon-coles unchanged, and the low-score fix still uses the actual score.
+- **w** was chosen on the development seasons only, from 0, 0.25, 0.5, 0.75 and 1: the more weight on shots, the worse the forecasts, and 0.25 is the most that cost nothing.
+- The files have no shots on target for the Bundesliga from 2002/03 to 2005/06; those matches count their goals.
+
 ### market-consensus
 
 What the bookmakers think.
@@ -97,13 +106,13 @@ What the bookmakers think.
 
 The market is the bar to beat. Beating it clearly would more likely point to a bug or leakage than to a real edge.
 
-### market-elo and market-dc
+### market-elo, market-dc and market-shots
 
-The market forecast, adjusted by one of our models: elo for market-elo, dixon-coles for market-dc. They answer one question: does our model know anything the market does not?
+The market forecast, adjusted by one of our models: elo for market-elo, dixon-coles for market-dc, shots-dc for market-shots. They answer one question: does our model know anything the market does not?
 
 - **Blend.** Each chance is `market^a × model^b × e^c`, then the three are scaled to add up to 100%. `b` is the weight our model gets; `a = 1`, `b = 0`, `c = 0` gives the market back. `c` is a fixed shift for home wins and one for draws.
 - **Fitted** before each season on all earlier seasons from 2005/06 (a multinomial logistic regression, no penalty), separately for pre-match and closing forecasts. So the first season has no forecasts: they start in 2006/07 pre-match and 2013/14 closing (closing odds start in 2012/13).
-- **Inputs** are the stored forecasts of market-consensus and of elo or dixon-coles at the same time. Nothing else, and no model is refitted.
+- **Inputs** are the stored forecasts of market-consensus and of the model at the same time. Nothing else, and no model is refitted.
 
 If our model adds nothing, `b` comes out near 0 and the blend scores about the same as the market, or slightly worse, since fitting the weights adds noise.
 

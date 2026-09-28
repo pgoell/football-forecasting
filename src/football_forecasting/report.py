@@ -18,7 +18,14 @@ from football_forecasting.data import (
     WAREHOUSE,
 )
 
-MODELS = ("naive-v1", "elo-v1", "poisson-v1", "dixon-coles-v1", "market-consensus-v1")
+MODELS = (
+    "naive-v1",
+    "elo-v1",
+    "poisson-v1",
+    "dixon-coles-v1",
+    "shots-dc-v1",
+    "market-consensus-v1",
+)
 
 SCORED = """
 with p as (

@@ -157,3 +157,68 @@ Fitted weights, selected seasons (all seasons: the check script):
 If our model knew something, `observed − market` would rise from the top of the table to the bottom. It stays flat, at about +0.01 in every bin: the market's general underrating of home wins in these seasons, the same as `c_home`, whatever the model says. The biggest disagreements (over 10 points) come out slightly below the market, not above. The slope of `observed − market` on the gap, per period and horizon, is between −0.11 and −0.01 for Elo and between −0.01 and +0.07 for Dixon-Coles (1 would mean the model is right, 0 that it adds nothing). Every bin lies within its own 95% margin of 0 (±0.02 to ±0.13; full tables by period and horizon, with and without `pre_timing_uncertain`, in the check script's output). `close` shows the same picture.
 
 Reading: our results-only models add nothing measurable to the market at either horizon. What little a blend gains comes from recalibrating the market, and even that does not survive out of sample. Criterion 2b fails on validation, as the spec expected; there is no holdout run to make. Question 3 (CLV) is still worth running, since it tests the betting rule directly, but with no forecasting edge a positive CLV would more likely point to stale bet365 prices than to our models.
+
+## 2026-09-28: Phase 4, shots and rest days
+
+Data seen: warm-up, development and validation seasons (2000/01 to 2022/23). The holdout is never loaded. The one setting, the shots weight, was chosen on development seasons only, before any validation score was seen.
+
+New data (Football-Data CSVs, `docs/data-sources.md`): shots and shots on target per team and match, and rest days (days since each team's previous match, and its matches in the 14 days before) from fixture dates. The files hold league matches only, so rest days miss cup and European games.
+
+### Rest days: no signal, no adjustment
+
+Development seasons, `pre`, stored forecasts of the market and Dixon-Coles (`uv run research/rest-days-check/check.py`). Rest difference = home minus away rest days, each capped at 8.
+
+| Model | Slope of (observed − forecast) home win on rest difference, per day | on difference in matches in 14 days |
+|---|---|---|
+| Market | −0.0006 ± 0.0096 | −0.0008 ± 0.0204 |
+| Dixon-Coles | −0.0006 ± 0.0097 | −0.0009 ± 0.0206 |
+
+Both slopes are 0 for both models, and no rest-difference bin lies outside its 95% margin. In 60% of matches both teams had the same rest, because the files carry no midweek cup or European games. With nothing to find, no model gets a rest adjustment; the columns stay in `int_matches`.
+
+### shots-dc-v1
+
+`shots-dc-v1`: `dixon-coles-v1` with the rates fitted to `(1 − w) × goals + w × c × shots on target` instead of goals, where `c` is the league's goals per shot on target in the fit window (0.24 in E0, 0.29 in D1 over development). Everything else is `dixon-coles-v1` unchanged, and the low-score factor still uses the score. D1 2002/03 to 2005/06 have no shots on target; those matches count their goals.
+
+Choosing w on development only (`OMP_NUM_THREADS=1 uv run research/shots-weight/choose.py`: the engine walks warm-up and development matches, validation is not passed in, nothing is stored):
+
+| w | log loss pre | log loss close |
+|---|---|---|
+| 0 (= dixon-coles-v1) | 0.9874 | 0.9874 |
+| 0.25 | 0.9875 | 0.9874 |
+| 0.5 | 0.9889 | 0.9888 |
+| 0.75 | 0.9917 | 0.9916 |
+| 1 (shots on target only) | 0.9959 | 0.9959 |
+
+(`close` here scores every development match, not only those with closing odds.) The more weight on shots, the worse. Stored: w = 0.25, the most weight that costs nothing on development, so the model differs from Dixon-Coles at all. A likely reason, not tested: one conversion rate per league treats every shot on target as worth the same, but strong teams create better chances and convert more of them, so a shots-based strength pulls strong teams toward the average, the bias Dixon-Coles already shows.
+
+Paired differences in log loss, 95% bootstrap interval over matchdays, on the matches naive, Elo, Dixon-Coles, shots-dc and the market all predicted (`uv run research/phase4-check/check.py shots-dc-v1`):
+
+| Period | Horizon | n | shots-dc | − Naive | − Elo | − Dixon-Coles | − Market |
+|---|---|---|---|---|---|---|---|
+| development | pre | 9,604 | 0.9875 | −0.0761 (−0.0822, −0.0698) | +0.0021 (−0.0008, +0.0047) | +0.0000 (−0.0007, +0.0007) | +0.0136 (+0.0106, +0.0167) |
+| development | close | 4,801 | 0.9803 | −0.0836 (−0.0933, −0.0740) | +0.0025 (−0.0016, +0.0065) | +0.0002 (−0.0007, +0.0012) | +0.0184 (+0.0137, +0.0236) |
+| validation | pre | 2,744 | 0.9906 | −0.0808 (−0.0930, −0.0675) | −0.0027 (−0.0077, +0.0026) | −0.0004 (−0.0018, +0.0008) | +0.0137 (+0.0083, +0.0193) |
+| validation | close | 2,744 | 0.9907 | −0.0807 (−0.0938, −0.0680) | −0.0026 (−0.0081, +0.0029) | −0.0004 (−0.0016, +0.0009) | +0.0162 (+0.0094, +0.0233) |
+
+Without `pre_timing_uncertain` matches (pre only): development n 9,056, − Dixon-Coles +0.0001 (−0.0006, +0.0009), − Market +0.0137; validation n 2,600, − Dixon-Coles −0.0004 (−0.0017, +0.0009), − Market +0.0132. No conclusion changes.
+
+### market-shots-v1: does shots-dc add to the market?
+
+`market-shots-v1`: the market-aware blend of question 2b (`market_aware.py`, unchanged) with `shots-dc-v1` as the model. Log loss minus market, paired, same method:
+
+| Period | Horizon | n | Market | market-shots − Market | for comparison: market-dc − Market |
+|---|---|---|---|---|---|
+| development | pre | 8,918 | 0.9744 | +0.0005 (−0.0007, +0.0018) | +0.0005 (−0.0007, +0.0018) |
+| development | close | 4,115 | 0.9602 | +0.0025 (+0.0008, +0.0043) | +0.0024 (+0.0009, +0.0041) |
+| validation | pre | 2,744 | 0.9769 | +0.0009 (−0.0001, +0.0020) | +0.0009 (−0.0001, +0.0019) |
+| validation | close | 2,744 | 0.9745 | +0.0003 (−0.0002, +0.0008) | +0.0003 (−0.0002, +0.0008) |
+
+Fitted weight `b` on shots-dc: +0.02 to +0.15 at `pre` from 2012/13, −0.02 to +0.07 at `close` from 2017/18; slightly above what Dixon-Coles got, but the blend scores no better. Slope of (observed − market) on (model − market) for the home win: −0.000 ± 0.146 (development pre), +0.035 ± 0.245 (validation pre), +0.058 ± 0.171 and −0.003 ± 0.228 at `close`; 0 means no information.
+
+### Answers
+
+- **Which feature helps?** Neither. Rest days show no effect on results the market or Dixon-Coles missed. Shots on target make Dixon-Coles worse the more weight they get; at w = 0.25 the model ties Dixon-Coles (every interval within ±0.002 and holding 0).
+- **Does shots-dc beat the base models?** It beats naive by 0.08, ties Elo and Dixon-Coles, and trails the market by 0.014 at `pre` and 0.016 to 0.018 at `close`, the same gap as Dixon-Coles.
+- **Does it add information to the market?** No, at either horizon. `market-shots-v1` scores the same as `market-dc-v1`, slightly worse than the market, every validation interval holding 0; the disagreement slope is 0.
+
+Reading: Football-Data shot counts carry no information that goals and the market do not already carry. xG is the next candidate source.

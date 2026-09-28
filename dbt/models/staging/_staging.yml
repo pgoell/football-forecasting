@@ -36,6 +36,11 @@ models:
           - accepted_values:
               arguments:
                 values: [H, D, A]
+      - name: home_shots
+        description: shots, including those on target; seasons that carry them in tests/shots_coverage.sql
+      - name: away_shots
+      - name: home_shots_on_target
+      - name: away_shots_on_target
 
   - name: stg_football_data__odds
     description: 1X2 odds, one row per match, bookmaker and moment.
