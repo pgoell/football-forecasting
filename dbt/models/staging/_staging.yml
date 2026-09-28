@@ -64,3 +64,16 @@ models:
           - accepted_values:
               arguments:
                 values: [pre, close]
+
+  - name: stg_understat__matches
+    description: One row per Understat match (2014/15 onward), team names mapped to Football-Data's.
+    columns:
+      - name: understat_id
+        data_tests: [unique, not_null]
+      - name: home_team
+        description: null if the Understat name is missing from seeds/understat_team_names.csv
+        data_tests: [not_null]
+      - name: away_team
+        data_tests: [not_null]
+      - name: is_result
+        description: false for matches not yet played

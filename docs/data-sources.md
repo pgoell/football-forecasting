@@ -11,8 +11,9 @@ Status per fact:
 ## Reproduce the data
 
 ```sh
-mise run data:download   # 54 CSVs into data/raw/football-data/
-git diff dbt/seeds/football_data_files.csv
+mise run data:download            # 54 CSVs into data/raw/football-data/
+mise run data:download:understat  # 26 JSON files into data/raw/understat/
+git diff dbt/seeds/football_data_files.csv dbt/seeds/understat_files.csv
 mise run dbt:build
 ```
 
@@ -125,9 +126,40 @@ From one research agent on 2026-09-28, checked on the providers' own pages by th
 | Pinnacle API | closed to the public since 23/07/2025 | n/a | none |
 | OddsPortal | odds history | free | none: terms forbid scraping |
 | football-data.org | fixtures and results; odds add-on | free; €15/mo odds | live fixtures |
-| Understat | xG and shots from 2014/15 | free | Phase 4 |
+| Understat | xG and shots from 2014/15 | free | used from Phase 4, see below |
 | StatsBomb open data | event data for a few seasons and tournaments | free, credit required | Phase 4 |
 | eloratings.net, martj42/international_results | national teams | free (results CC0) | EURO 2028 |
+
+## Understat (xG, 2014/15 onward)
+
+Files: `https://understat.com/getLeagueData/<EPL|Bundesliga>/<start year>`, JSON with every match of a season (`xG.h`, `xG.a`, `goals`, `isResult`, `datetime`, team titles), sent gzipped; the server answers 404 without the header `X-Requested-With: XMLHttpRequest`. 2014 to 2026 exist. `scripts/download_understat.py` stores each file unzipped in `data/raw/understat/<league>/<year>.json`, appends to `_manifest.jsonl` and rewrites the committed record `dbt/seeds/understat_files.csv` (test `understat_files_match_recorded_version`, warns).
+
+### Terms: robots.txt forbids scripts (checked); downloaded anyway
+
+> "User-agent: * / Disallow: /"
+
+Source: <https://understat.com/robots.txt> (two lines, joined here; `Last-Modified` 13 Jul 2020), archived <https://web.archive.org/web/20260928162956/https://understat.com/robots.txt>.
+
+The site has no terms, privacy or FAQ page: `/terms`, `/tos`, `/terms-of-use`, `/terms-and-conditions`, `/legal`, `/privacy`, `/privacy-policy`, `/faq`, `/about`, `/contact` and `/disclaimer` all return 404, and the home page links only to the league pages and `support@understat.com` (home page archived <https://web.archive.org/web/20260928163005/https://understat.com/>). So robots.txt is the only rule the site states, and it asks every script to stay off the whole site.
+
+The project owner decided on 2026-09-28 to download regardless, for private, non-commercial research. The script goes against robots.txt; it makes 26 requests (one per league and season) at one a second, and the data is not published or passed on. Before any other use, ask Understat (`support@understat.com`).
+
+### Team names and matching (tested)
+
+`dbt/seeds/understat_team_names.csv` maps each Understat name to Football-Data's (24 of 67 differ, e.g. `RasenBallsport Leipzig` to `RB Leipzig`). `stg_understat__matches` joins on league, season and both teams; a pair meets once per season at each ground. Tests:
+
+- `understat_teams_all_mapped`: every E0 and D1 team from 2014/15 has an Understat name
+- `understat_matches_football_data`: every Football-Data match from 2014/15 has exactly one played Understat match with the same score, and every played Understat match has a Football-Data match (the running season excepted). All 8,318 match; one score differs by design: D1 Union Berlin v Bochum, 14/12/2024, 1-1 on Understat, the awarded 0-2 in Football-Data.
+
+xG counts as known with the result (`result_at`). How Understat computes xG, and whether it revises old values: not checked (**unverified**).
+
+### FBref (not used)
+
+> "[you may not] without our express written permission, use any automated means to access or use the Site, including scripts, bots, scrapers, data miners, or similar software, in a manner that adversely impacts site performance or access"
+
+> "[you may not] copy or use any material or Content from the Site, including without limitation any statistics, data, text, graphics, or images, for purposes of training, fine-tuning, prompting, or instructing artificial intelligence models or technologies in any manner, including without limitation for purposes of [...] (ii) supporting machine learning methods used to predict, classify, label, or score inputs into the models"
+
+Source: <https://www.sports-reference.com/termsofuse.html> (FBref's owner, "Last Updated: May 19, 2023"), archived <https://web.archive.org/web/20260812025756/https://www.sports-reference.com/termsofuse.html>. The second clause covers a forecasting model fitted on their data, however it is fetched. Rate limit, for the record: "we will block users sending requests to: FBref and Stathead sites more often than ten requests in a minute" (<https://www.sports-reference.com/bot-traffic.html>, archived <https://web.archive.org/web/20260928163442/https://www.sports-reference.com/bot-traffic.html>).
 
 ## Open checks
 

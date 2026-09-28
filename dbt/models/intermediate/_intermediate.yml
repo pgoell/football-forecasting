@@ -16,6 +16,8 @@ models:
       - name: pre_timing_uncertain
         description: match from 20 Dec to 5 Jan, where pre_at may be too early
         data_tests: [not_null]
+      - name: home_xg
+        description: Understat xG, 2014/15 onward (tests/understat_matches_football_data.sql); null before
       - name: home_rest_days
         description: >
           days since the team's previous league match (any season, so the first

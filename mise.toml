@@ -21,6 +21,10 @@ run = [
 description = "Download Football-Data CSVs (E0, D1) into data/raw/"
 run = "uv run scripts/download_football_data.py"
 
+[tasks."data:download:understat"]
+description = "Download Understat xG (EPL, Bundesliga) into data/raw/"
+run = "uv run scripts/download_understat.py"
+
 [tasks."dbt:build"]
 description = "Build and test the dbt models into data/warehouse.duckdb"
 dir = "{{config_root}}/dbt"

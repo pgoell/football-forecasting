@@ -11,6 +11,8 @@
 -- before the day's last kickoff.
 -- pre_timing_uncertain: matches from 20 Dec to 5 Jan, where archived files
 -- point to odd collection batches.
+-- home_xg, away_xg: Understat xG, 2014/15 onward; known with the result
+-- (result_at), like shots.
 -- rest_days, matches_14d: days since the team's previous match and its matches
 -- in the 14 days before, from fixture dates, so known before the match. League
 -- matches only: the files have no cup or European games.
@@ -42,10 +44,18 @@ matches as (
         h.rest_days as home_rest_days,
         a.rest_days as away_rest_days,
         h.matches_14d as home_matches_14d,
-        a.matches_14d as away_matches_14d
+        a.matches_14d as away_matches_14d,
+        u.home_xg,
+        u.away_xg
     from {{ ref('stg_football_data__matches') }} as m
     inner join rest as h on m.match_id = h.match_id and h.side = 'home'
     inner join rest as a on m.match_id = a.match_id and a.side = 'away'
+    left join {{ ref('stg_understat__matches') }} as u
+        on m.league = u.league
+        and m.season = u.season
+        and m.home_team = u.home_team
+        and m.away_team = u.away_team
+        and u.is_result
 )
 
 select
@@ -63,6 +73,8 @@ select
     away_shots,
     home_shots_on_target,
     away_shots_on_target,
+    home_xg,
+    away_xg,
     home_rest_days,
     away_rest_days,
     home_matches_14d,

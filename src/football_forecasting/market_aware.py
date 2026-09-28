@@ -29,6 +29,7 @@ VARIANTS = {
     "market-elo-v1": "elo-v1",
     "market-dc-v1": "dixon-coles-v1",
     "market-shots-v1": "shots-dc-v1",
+    "market-xg-v1": "xg-dc-v1",
 }
 P = ["p_home", "p_draw", "p_away"]
 

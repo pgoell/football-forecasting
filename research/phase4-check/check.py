@@ -3,7 +3,8 @@
 For each new model: log loss minus naive, Elo, Dixon-Coles and the market,
 paired over the matches all of them predicted, then its market-aware blend
 minus the market, the blend's weight on the model per season, and the slope of
-(observed - market) on (model - market) for the home win. 95% intervals from a
+(observed - market) on (model - market) for the home win. A model that starts
+late (xg-dc-v1, 2014/15) narrows every comparison to its seasons. 95% intervals from a
 bootstrap over matchdays (report.bootstrap). Development and validation seasons,
 stored predictions; run after `mise run backtest`.
 
@@ -22,6 +23,7 @@ con = connect()
 
 
 def losses(models: tuple[str, ...], certain_only: bool = False):
+    """Log loss per match, wide by model, on the matches all `models` predicted."""
     df = query(
         con,
         """
@@ -36,8 +38,11 @@ def losses(models: tuple[str, ...], certain_only: bool = False):
     ).reset_index()
 
 
-def paired(model: str, refs: tuple[str, ...], certain_only: bool = False) -> None:
-    wide = losses((model, *refs), certain_only)
+def paired(
+    model: str, refs: tuple[str, ...], certain_only: bool = False, also: tuple[str, ...] = ()
+) -> None:
+    """`model` minus each of `refs`; `also` only narrows the matches to those it predicted."""
+    wide = losses((model, *refs, *also), certain_only)
     print(f"| Period | Horizon | n | {model} | " + " | ".join(f"− {r}" for r in refs) + " |")
     print("|---|---|---|---|" + "---|" * len(refs))
     for (period, horizon), g in wide.groupby(["period", "horizon"], sort=False):
@@ -78,6 +83,8 @@ for model in sys.argv[1:]:
     paired(blend, (MARKET,))
     print("\n## Without pre_timing_uncertain\n")
     paired(blend, (MARKET,), certain_only=True)
+    print(f"\n## For comparison, market-dc-v1 minus the market, same matches as {blend}\n")
+    paired("market-dc-v1", (MARKET,), also=(blend,))
     print(f"\n## {blend}: fitted weights (a: market, b: model)\n")
     _, w = walk_forward(inputs(con, model))
     print("| horizon | season | n fit | a | b | c_home | c_draw |\n|---|---|---|---|---|---|---|")
