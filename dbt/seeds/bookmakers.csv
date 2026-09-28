@@ -1,0 +1,27 @@
+code,name,is_aggregate,licensed_de
+1XB,1xBet,false,false
+B365,bet365,false,true
+BF,Betfair Sportsbook,false,false
+BFD,Betfred,false,false
+BFE,Betfair Exchange,false,false
+BMGM,BetMGM,false,false
+BS,Blue Square,false,false
+BV,BetVictor,false,false
+BW,bwin,false,true
+CL,Coral,false,false
+GB,Gamebookers,false,false
+IW,Interwetten,false,true
+LB,Ladbrokes,false,false
+PP,Paddy Power,false,false
+PS,Pinnacle,false,false
+SB,Sportingbet,false,false
+SJ,Stan James,false,false
+SKB,Sky Bet,false,false
+SO,Sporting Odds,false,false
+SY,Stanley Bet,false,false
+VC,VC Bet,false,false
+WH,William Hill,false,false
+Avg,Market average,true,false
+Max,Market maximum,true,false
+BbAv,Betbrain average,true,false
+BbMx,Betbrain maximum,true,false

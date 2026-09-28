@@ -1,0 +1,9 @@
+models:
+  - name: int_odds
+    description: Odds with available_at and margin-free probabilities (normalized 1/odds).
+    columns:
+      - name: available_at
+        description: when the odds became known; see the model for the rule
+        data_tests: [not_null]
+      - name: overround
+        description: sum of 1/odds; 1.05 = 5% margin

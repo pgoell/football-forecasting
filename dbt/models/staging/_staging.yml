@@ -1,4 +1,7 @@
 models:
+  - name: base_football_data
+    description: Every Football-Data CSV row as text, unioned by column name.
+
   - name: stg_football_data__matches
     description: One row per match, E0 and D1, from Football-Data.
     columns:
@@ -16,7 +19,9 @@ models:
       - name: match_date
         data_tests: [not_null]
       - name: kickoff_time
-        description: as given by Football-Data (likely UK time, unverified); null before 2019/20
+        description: UK local time, as given by Football-Data; null before 2019/20
+      - name: kickoff_at
+        description: kickoff_time as a timestamp with time zone; null before 2019/20
       - name: home_team
         data_tests: [not_null]
       - name: away_team
@@ -31,3 +36,26 @@ models:
           - accepted_values:
               arguments:
                 values: [H, D, A]
+
+  - name: stg_football_data__odds
+    description: 1X2 odds, one row per match, bookmaker and moment.
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_football_data__matches')
+                field: match_id
+      - name: bookmaker
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('bookmakers')
+                field: code
+      - name: moment
+        description: pre (Football-Data snapshot) or close
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [pre, close]
