@@ -3,8 +3,11 @@ import math
 from datetime import UTC, datetime, timedelta
 
 import duckdb
+import numpy as np
+import pandas as pd
 import pytest
 
+from football_forecasting import market_aware
 from football_forecasting.backtest import Prediction, run, save
 from football_forecasting.data import Fixture, Match, Odds
 from football_forecasting.models import (
@@ -221,3 +224,33 @@ def test_goal_models_learn_team_strength():
         last = next(m for m in reversed(strong) if m.fixture.home_team == "A")
         p = model.predict(last.fixture, "pre", last.pre_at, [])
         assert p is not None and p[0] > 0.6
+
+
+def test_market_aware_fit_recovers_weights():
+    rng = np.random.default_rng(1)
+    market = np.log(rng.dirichlet([4, 2, 3], 20000))
+    model = np.log(rng.dirichlet([4, 2, 3], 20000))
+    truth = np.array([1.1, 0.3, 0.1, -0.05])
+    p = market_aware.probs(truth, market, model)
+    y = (rng.random(len(p))[:, None] > p.cumsum(axis=1)).sum(axis=1)
+    assert market_aware.fit(market, model, y) == pytest.approx(truth, abs=0.06)
+
+
+def test_market_aware_uses_only_earlier_seasons():
+    rng = np.random.default_rng(2)
+    n = 300
+    df = pd.DataFrame(
+        {
+            "horizon": "pre",
+            "season": np.repeat(["0506", "0607", "0708"], n // 3),
+            "result": rng.choice(list("HDA"), n),
+        }
+    )
+    df[["p_home", "p_draw", "p_away"]] = rng.dirichlet([4, 2, 3], n)
+    df[["model_home", "model_draw", "model_away"]] = rng.dirichlet([4, 2, 3], n)
+    out, weights = market_aware.walk_forward(df)
+    assert sorted(out["season"].unique()) == ["0607", "0708"]
+    assert list(weights["n_fit"]) == [100, 200]
+    later = df.assign(result=np.where(df["season"] == "0708", "H", df["result"]))
+    before = out[out["season"] == "0607"]
+    assert before.equals(market_aware.walk_forward(later)[0].query("season == '0607'"))

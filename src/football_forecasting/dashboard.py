@@ -70,6 +70,10 @@ MODEL_HELP = (
     "low scores (0-0, 1-1) happen. "
     "**market-consensus**: the bookmakers' odds with their margin removed, taking the "
     "middle value across bookmakers. The bar to beat. "
+    "**market-elo** and **market-dc**: the market forecast blended with elo or dixon-coles, "
+    "the blend fitted on earlier seasons; do our models add anything to the market? They "
+    "start a season later than the rest (2006/07 pre-match, 2013/14 closing), so choosing "
+    "them drops the first season from every model's scores. "
     "How each works, with its settings: Glossary."
 )
 UNCERTAIN_HELP = (

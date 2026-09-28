@@ -97,6 +97,16 @@ What the bookmakers think.
 
 The market is the bar to beat. Beating it clearly would more likely point to a bug or leakage than to a real edge.
 
+### market-elo and market-dc
+
+The market forecast, adjusted by one of our models: elo for market-elo, dixon-coles for market-dc. They answer one question: does our model know anything the market does not?
+
+- **Blend.** Each chance is `market^a × model^b × e^c`, then the three are scaled to add up to 100%. `b` is the weight our model gets; `a = 1`, `b = 0`, `c = 0` gives the market back. `c` is a fixed shift for home wins and one for draws.
+- **Fitted** before each season on all earlier seasons from 2005/06 (a multinomial logistic regression, no penalty), separately for pre-match and closing forecasts. So the first season has no forecasts: they start in 2006/07 pre-match and 2013/14 closing (closing odds start in 2012/13).
+- **Inputs** are the stored forecasts of market-consensus and of elo or dixon-coles at the same time. Nothing else, and no model is refitted.
+
+If our model adds nothing, `b` comes out near 0 and the blend scores about the same as the market, or slightly worse, since fitting the weights adds noise.
+
 ## Runs
 
 **Run.** One execution of the backtest. Each run adds a row per model with the code version (commit), whether that code had uncommitted changes, the model's settings, and the seasons it read.

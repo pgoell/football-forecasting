@@ -30,7 +30,10 @@ run = "uv run dbt build --profiles-dir ."
 
 [tasks.backtest]
 description = "Run the walk-forward backtest, store predictions, print scores"
-run = "uv run python -m football_forecasting.backtest"
+run = [
+  "uv run python -m football_forecasting.backtest",
+  "uv run python -m football_forecasting.market_aware",
+]
 
 [tasks.dashboard]
 description = "Serve the backtest dashboard on localhost:8501"

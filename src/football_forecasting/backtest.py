@@ -15,10 +15,11 @@ import json
 import subprocess
 import tempfile
 import uuid
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import astuple, dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Protocol
 
 import duckdb
 
@@ -36,6 +37,15 @@ from football_forecasting.report import report
 
 HORIZONS = ("pre", "close")
 EXECUTABLE_BOOKMAKER = "B365"  # docs/experiment-spec.md, Betting rule
+
+
+class Recorded(Protocol):
+    """What a run records about each model."""
+
+    @property
+    def version(self) -> str: ...
+    @property
+    def params(self) -> Mapping[str, float | str]: ...
 
 
 @dataclass(frozen=True)
@@ -111,7 +121,10 @@ def git_state() -> tuple[str, bool]:
 
 
 def save(
-    predictions: list[Prediction], models: Sequence[Model], seasons: str, path: Path = PREDICTIONS
+    predictions: list[Prediction],
+    models: Sequence[Recorded],
+    seasons: str,
+    path: Path = PREDICTIONS,
 ) -> int:
     """Record the run and append predictions not yet stored; return how many were new.
 
