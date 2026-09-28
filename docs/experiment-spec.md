@@ -25,7 +25,21 @@ Expected answer: yes to 1, no or barely to 2, unknown for 3 and 4. A clean "no" 
 | Models | naive, Elo, Poisson, Dixon-Coles, market consensus | trees, ensembles (Phase 5) |
 | Money | none | real bets (Phase 7 at the earliest) |
 
-Source: Football-Data (football-data.co.uk). Odds from ~2000/01; closing odds only from 2019/20.
+## Data
+
+| Need | Source | Cost |
+|---|---|---|
+| Results, fixtures, `pre` and `close` odds | Football-Data CSVs (`mmz4281/{season}/{E0,D1}.csv`) | free |
+| True `T-24h` odds, 2020/21 onward (only if `pre` proves too coarse) | The Odds API, one month of the 100K plan | $59 once |
+| Live odds for paper trading | The Odds API, 20K plan | $30/mo |
+
+Football-Data facts that shape the experiment:
+
+- Kickoff time exists only from 2019/20; before that, `available_at` falls back to the match date
+- Pinnacle (`PS*`) closing odds: 2012/13 to mid 2025/26; unreliable since 23/07/2025 (210 of 380 E0 and 150 of 306 D1 matches filled in 2025/26), gone in 2026/27
+- Closing odds for all bookmakers (`*C*`): from 2019/20
+- Betfair Exchange (`BFE*`): from 2024/25
+- Terms: private, non-commercial use only
 
 ## Target
 
@@ -33,7 +47,7 @@ Source: Football-Data (football-data.co.uk). Odds from ~2000/01; closing odds on
 
 Two horizons:
 
-- `pre`: the Football-Data pre-match odds snapshot (unsure of the exact capture time, check before freezing; not a true `T-24h`)
+- `pre`: the Football-Data pre-match snapshot, taken Friday by 17:00 UK time for weekend matches and Tuesday by 13:00 for midweek ones; 20h to 3 days before kickoff, not a fixed `T-24h`
 - `close`: closing odds
 
 A prediction may use only data with `available_at` before the horizon.
@@ -57,7 +71,7 @@ Walk-forward: refit or update before each matchday, never with a later match.
 1. Naive: league base rates of H/D/A from prior seasons
 2. Elo: home advantage included, ratings carried across seasons
 3. Market: devigged by normalization, median across bookmakers
-4. Sharp market: Pinnacle closing, devigged (the bar to beat)
+4. Sharp market: Pinnacle closing, devigged (the bar to beat); Betfair Exchange closing where Pinnacle is missing (most of 2025/26)
 
 ## Metrics
 
@@ -75,8 +89,8 @@ CLV per bet = `odds_taken / close_odds_devigged - 1`.
 
 - Bet when `EV = p_model * odds - 1` exceeds a threshold
 - Flat 1-unit stake, at most one outcome per match
-- Odds: one bookmaker that takes German customers (not Max odds, no line shopping)
-- Cost: 5.3% German betting tax on stake, unless the chosen bookmaker already prices it in
+- Odds: bet365 (`B365*`), licensed in Germany; no Max odds, no line shopping. Football-Data likely records the international site, not bet365.de, so this stands in for executable odds until paper trading checks them
+- Cost: 5.3% German betting tax on stake (the law puts the tax on the bookmaker; bet365 says it absorbs it, unverified), so the backtest assumes the worse case
 - At most 3 thresholds tried, on validation only; the holdout sees one
 
 ## Success criteria
@@ -86,7 +100,7 @@ Confidence intervals: 95%, paired bootstrap over matches (block by matchday).
 | # | Pass if (holdout) |
 |---|---|
 | 1 | best model log loss below Elo, CI excludes 0 |
-| 2a | best model log loss below Pinnacle closing (stretch, expected fail) |
+| 2a | best model log loss below sharp market closing (stretch, expected fail) |
 | 2b | market-aware model log loss below market alone, CI excludes 0 |
 | 3 | mean CLV > 0, CI excludes 0, at least 300 bets |
 | 4 | net ROI > 0 after tax |
@@ -110,10 +124,11 @@ Criterion 4 alone proves little. At average odds ~2.5, flat-stake ROI has a stan
 ## Open decisions
 
 - [ ] Holdout seasons: 2023/24 to 2025/26 as above, or shorter validation for a larger holdout?
-- [ ] Which bookmaker counts as executable (Bet365? others in the Football-Data files?) and how its tax shows up in the odds
-- [ ] Football-Data `pre` snapshot timing: good enough, or buy historical snapshots (The Odds API, from June 2020) for a true `T-24h`?
+- [x] Executable bookmaker: bet365, 5.3% on stake (see Betting rule)
+- [x] `pre` timing: use Football-Data first; buy The Odds API snapshots only if timing matters
 - [ ] Time budget for Phases 1 to 3
 
 ## Change log
 
 - 2026-09-28: first draft
+- 2026-09-28: data sources; `pre` timing; Pinnacle dates and Betfair fallback; bet365 as executable odds
