@@ -81,6 +81,19 @@ seeds:
         sha256: varchar
         bytes: bigint
 
+  - name: international_awarded_matches
+    description: >
+      martj42 matches whose score was awarded, not played: no 90-minute score,
+      never scored, and missing from eloratings.net.
+    columns:
+      - name: match_id
+        data_tests:
+          - unique
+          - relationships:
+              arguments:
+                to: ref('stg_international_results__matches')
+                field: match_id
+
   - name: team_names
     description: >
       One id per national team, with its martj42 name and its current

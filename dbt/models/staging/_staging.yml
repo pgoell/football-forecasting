@@ -95,9 +95,19 @@ models:
       - name: away_score
         data_tests: [not_null]
       - name: home_score_90
-        description: goals at minute 90 or before (stoppage included); null unless goals_complete
+        description: goals at minute 90 or before (stoppage included); null unless score_90_reliable
       - name: goals_complete
         description: goalscorers.csv lists every goal of the match, each with a minute
+      - name: after_90
+        description: listed goals after minute 90
+      - name: awarded
+        description: in seeds/international_awarded_matches.csv; the score is a ruling, not a result
+        data_tests: [not_null]
+      - name: score_90_reliable
+        description: >
+          goals_complete, not awarded, and (outside WC and EURO finals) no goal
+          after minute 90; see tests/score_90_only_where_reliable.sql
+        data_tests: [not_null]
       - name: finals
         description: WC or EURO for finals matches, else null
       - name: edition
