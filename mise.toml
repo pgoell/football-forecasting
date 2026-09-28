@@ -1,10 +1,10 @@
 # mise.toml: toolchain pins and task definitions
 
 [tools]
-python    = "3.13"
-uv        = "latest"
-lefthook  = "latest"
-cocogitto = "latest"
+python    = "3.13.13"
+uv        = "0.11.6"
+lefthook  = "2.1.6"
+cocogitto = "7.0.0"
 
 # ─── Bootstrap ──────────────────────────────────────────────────────────────
 
