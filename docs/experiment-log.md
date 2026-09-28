@@ -553,3 +553,101 @@ M3 (model vs. market) is not run: no odds were bought for this run. To be run la
 **Reading.** Question 1 of the tournament spec ("does our model predict 90-minute H/D/A as well as the eloratings.net ratings") gets a narrower answer on the holdout than on development or validation: close, but for the first time not tied, and the free published ratings edge it out. Question 2 ("are its probabilities of reaching each round calibrated, and better than naive") splits: clearly better than naive (R1), but not well calibrated on this one tournament (R2). Both point the same way: publish the dashboard on eloratings.net's ratings through this simulator, not national-elo-v1's own.
 
 Stop, per the task: WC 2026 only, scored once. A second holdout run counts as a new experiment and needs a new tournament, which means EURO 2028.
+
+## 2026-09-28: why are round probabilities too cautious? Diagnosis on development only
+
+The holdout's R2 failed (slope 1.387, 95% CI 1.102 to 1.874: round probabilities too
+cautious). Per the spec, a second holdout run needs EURO 2028, so this diagnosis and any fix
+run on DEVELOPMENT tournaments only (WC 2006, 2010, 2014, 2018; EURO 2008, 2012, 2016, 2006-01-01
+to 2019-12-31). Validation and the holdout are not touched, and no stored prediction changes.
+Code: `research/round-calibration/diagnose.py` (nothing stored; the simulator runs in memory).
+
+Candidate causes, from the simulator's own rules (docs/tournament-spec.md, Simulator):
+
+1. The group-stage score pool is drawn by outcome only ("H"/"D"/"A"), not by how close the
+   match was, so a blowout and a nail-biter draw from the same pool of scores; this flattens
+   goal differences relative to the rating gap and so flattens group tie-breaks.
+2. The 90-minute knockout draw rule, `P(H) / (P(H) + P(A))`, is a heuristic for extra time and
+   penalties; if shootouts are closer to a coin flip than the pre-match favourite's edge, this
+   rule over-favours the stronger team, which could bias round reach either way.
+3. The ordered logit's spread on tournament matches: if match probabilities are themselves too
+   moderate or too sharp, the bracket would propagate that into round probabilities.
+4. Rating uncertainty: the simulator treats each team's rating as exactly known; a team's true
+   strength has estimation noise the Monte Carlo run never sees.
+
+### Checks
+
+Match check, calibration slope of the ordered logit on the 369 development finals matches
+(each match contributes a home-win and an away-win point, 738 points), stored predictions,
+no rerun:
+
+| model | n matches | slope | 95% CI |
+|---|---|---|---|
+| eloratings-v1 | 369 | 0.879 | (0.684, 1.101) |
+| national-elo-v1 | 369 | 0.999 | (0.771, 1.259) |
+
+Both hold 1 comfortably: candidate 3 (the logit's spread) is not showing a problem on
+development, for either model that could feed EURO 2028.
+
+Rounds check: the v1 simulator run forward on the 7 development tournaments (never done
+before; only validation and the holdout went through the bracket simulator), scored against
+the real bracket (round of 16 to the final for the 32-team World Cups and the 24-team EURO
+2016; quarterfinal to the final for the 16-team EURO 2008/2012), 704 team-round rows:
+
+| variant | n team-rounds | Brier | slope | 95% CI |
+|---|---|---|---|---|
+| v1, eloratings-v1 | 704 | 0.1208 | 0.927 | (0.775, 1.128) |
+| v1, national-elo-v1 | 704 | 0.1236 | 0.994 | (0.830, 1.207) |
+
+Development's own slope is close to 1 (validation: 1.064; holdout: 1.387), for both models.
+The "too cautious" pattern the holdout showed does not appear on 7 development tournaments.
+
+### Fixes tried, development only
+
+**Fix A, score pool bucketed by rating gap** (candidate 1): three buckets of
+`|eloratings rating gap|` (< 100, 100 to 250, > 250 Elo points, from the development finals
+gap's own quartiles: median 141, 90th percentile 315), each with its own pool of historical
+scores by outcome; a bucket under 15 scores for an outcome falls back to the full pool.
+
+| variant | n team-rounds | Brier | slope | 95% CI |
+|---|---|---|---|---|
+| fix A, eloratings-v1 | 704 | 0.1201 | 0.934 | (0.782, 1.136) |
+| fix A, national-elo-v1 | 704 | 0.1231 | 0.998 | (0.833, 1.215) |
+
+**Fix B, 50/50 knockout draw split** (candidate 2, an ablation): replace
+`P(H) / (P(H) + P(A))` with a flat coin flip whenever a knockout match is level at 90 minutes.
+
+| variant | n team-rounds | Brier | slope | 95% CI |
+|---|---|---|---|---|
+| fix B, eloratings-v1 | 704 | 0.1199 | 1.034 | (0.870, 1.251) |
+| fix B, national-elo-v1 | 704 | 0.1231 | 1.092 | (0.918, 1.317) |
+
+Candidate 4 (rating uncertainty) was not tried: a simple fix would need resampling many
+alternate rating trajectories, not a small change, so it stays a caution rather than a fix.
+
+### Reading
+
+None of it moves the needle. Fix A shifts the slope by 0.004 to 0.007 and the Brier by at
+most 0.0007; Fix B shifts the slope by 0.098 to 0.107, but past 1 for eloratings-v1 (0.927 to
+1.034, arguably closer) and further from it for national-elo-v1 (0.994 to 1.092, clearly
+worse), and every fix's confidence interval sits almost entirely inside the unfixed
+baseline's. Neither is a fix that clearly helps both models, or either model by more than
+noise.
+
+The plainer reading: development does not reproduce the holdout's problem. Seven
+tournaments, 704 team-round rows, give a slope of 0.93 to 0.99, in the same range as
+validation's 1.064 and well inside the R2 band (0.7 to 1.3); the holdout's 1.387 stands alone.
+One tournament's bracket is 48 teams whose rounds are far from independent (a single upset
+early on moves several teams' round probabilities together), so a single slope reading from
+it is noisy, exactly the caution the holdout entry itself already raised. The match check
+also argues against a hidden, structural bias: the ordered logit's own spread on development
+tournament matches is already close to calibrated for both models.
+
+**No fix clearly helps on development, so none is kept.** Per the task, a fix only becomes a
+new simulator version if it clearly helps; nothing here does. The simulator is unchanged and
+this run names it `sim-v1` for reference. EURO 2028's forecasts (once there is a draw to
+forecast) use `sim-v1` and eloratings-v1 ratings (docs/tournament-spec.md, Decisions that
+follow: "our Elo is worse than a free published one; the dashboard uses eloratings.net
+ratings through our simulator"). If EURO 2028's own round probabilities turn out too cautious
+again, rating uncertainty (candidate 4) is the next thing to try, not another pass at the
+score pool or the draw rule.
