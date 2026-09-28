@@ -81,3 +81,22 @@ seeds:
         sha256: varchar
         bytes: bigint
 
+  - name: team_names
+    description: >
+      One id per national team, with its martj42 name and its current
+      eloratings.net code (old codes go through eloratings' teams.tsv first).
+      Every martj42 team since 2004 that eloratings.net rates. odds_api_name is
+      filled when The Odds API data comes in.
+    config:
+      column_types:
+        team_id: varchar
+        martj42_name: varchar
+        eloratings_code: varchar
+        odds_api_name: varchar
+    columns:
+      - name: team_id
+        data_tests: [unique, not_null]
+      - name: martj42_name
+        data_tests: [unique, not_null]
+      - name: eloratings_code
+        data_tests: [unique, not_null]
