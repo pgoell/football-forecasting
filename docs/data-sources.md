@@ -528,6 +528,44 @@ uses real WC 2026 results already in the warehouse; it checks the format data on
 bracket template, venues), makes no model or scoring choice, and so is not a second look at
 the holdout for docs/tournament-spec.md's Rules against fooling ourselves.
 
+### EURO 2028 qualifying (checked)
+
+Checked 2026-09-28, for the EURO 2028 dashboard (docs/tournament-spec.md, question 3).
+Sources: UEFA's own announcements and Wikipedia's "UEFA Euro 2028 qualifying" article,
+cross-checked against each other.
+
+**The draw has not happened.** It is set for 6 December 2026 in Belfast, Northern Ireland
+(the ICC), after today: "The UEFA EURO 2028 qualifying draw will be held in Belfast,
+Northern Ireland, on Sunday 6 December 2026"
+(<https://www.uefa.com/euro2028/news/029f-1f2ff991e87b-345fffcd69c3-1000--uefa-euro-2028-qualifying-draw-to-take-place-in-belfast/>).
+So `tournament_formats.yaml`'s `euro2028` entry keeps `groups: null`, and no team-to-group
+assignment exists to type in.
+
+**Format.** 12 qualifying groups of four or five teams, all 55 UEFA members entering,
+each team home and away within its group: "12 qualifying groups will be formed of four or
+five teams"
+(<https://www.uefa.com/euro2028/news/0299-1dcf3fef69a9-41405d004b47-1000--qualification-system-for-uefa-euro-2028-approved/>).
+Qualifying is played March to November 2027 (matchdays 1 and 2 in late March, 3 and 4 in
+June, 5 to 10 from September to November), with any play-offs in March 2028
+(<https://en.wikipedia.org/wiki/UEFA_Euro_2028_qualifying>, checked 19 September 2026 by
+its own last-updated note).
+
+**Hosts do not get an automatic finals place.** Unlike EURO 2024 and earlier, England,
+Scotland, Wales and the Republic of Ireland all play in qualifying, "drawn into separate
+groups" so they never meet each other there (UEFA URL above). Of the 24 finals places: the
+12 group winners and the 8 best-ranked runners-up (20 teams) qualify directly; "two spots
+in the final tournament will be reserved for the two best-ranked host nations who are not
+qualified as group winners or best runners-up"; the remaining places go through play-offs
+among teams that missed out directly, the exact play-off field size depending on how many
+of the 4 hosts already qualified or took a reserved place (UEFA URL above). This project's
+`euro2028.py` still flags the 4 hosts on the ratings table, since they keep this safety net,
+but does not treat them as qualified.
+
+**Not yet found.** The exact seeding/pot basis for the December 2026 draw (likely the UEFA
+Nations League 2024/25 standing or the country coefficient, neither confirmed in the sources
+above) and the precise size of each qualifying group (four vs. five teams per group is
+known; which specific groups get five is not, since the draw has not happened).
+
 ## Open checks
 
 - The dbt test `odds_overround_plausible` warns on 65 single-bookmaker rows outside a margin of -1% to 30% (counted 2026-09-28). Likely source errors, not traced, and left in: marking them unreliable would change the stored scores.
