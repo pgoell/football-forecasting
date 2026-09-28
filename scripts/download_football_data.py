@@ -9,6 +9,11 @@ Windows-1252, newer ones with a BOM. Each run overwrites the files and appends
 one line per file to _manifest.jsonl (sha256 of the bytes as downloaded), so we
 know what was fetched when.
 
+It also rewrites dbt/seeds/football_data_files.csv, the committed record of the
+stored files (sha256 of the UTF-8 text dbt reads). After a download,
+`git diff dbt/seeds/football_data_files.csv` shows which files differ from the
+data version the repo was built with.
+
     uv run scripts/download_football_data.py [--first 2000] [--last 2026]
 """
 
@@ -22,7 +27,9 @@ from pathlib import Path
 
 LEAGUES = ["E0", "D1"]
 URL = "https://www.football-data.co.uk/mmz4281/{season}/{league}.csv"
-OUT = Path(__file__).resolve().parent.parent / "data" / "raw" / "football-data"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "data" / "raw" / "football-data"
+RECORD = ROOT / "dbt" / "seeds" / "football_data_files.csv"
 
 
 def season_code(start_year: int) -> str:
@@ -46,6 +53,7 @@ def main() -> None:
     args = parser.parse_args()
 
     manifest = OUT / "_manifest.jsonl"
+    record = {}
     OUT.mkdir(parents=True, exist_ok=True)
     for league in LEAGUES:
         for year in range(args.first, args.last + 1):
@@ -55,7 +63,10 @@ def main() -> None:
                 body = resp.read()
             path = OUT / league / f"{season}.csv"
             path.parent.mkdir(exist_ok=True)
-            path.write_text(to_utf8(body), encoding="utf-8", newline="\n")
+            text = to_utf8(body)
+            path.write_text(text, encoding="utf-8", newline="\n")
+            stored = text.encode("utf-8")
+            record[(league, season)] = (hashlib.sha256(stored).hexdigest(), len(stored))
             entry = {
                 "league": league,
                 "season": season,
@@ -69,6 +80,21 @@ def main() -> None:
                 f.write(json.dumps(entry) + "\n")
             print(f"{league} {season}: {len(body):,} bytes")
             time.sleep(1)  # be polite to a free site
+
+    write_record(record)
+
+
+def write_record(new: dict[tuple[str, str], tuple[str, int]]) -> None:
+    """Merge this run's files into the committed record, sorted by league and season."""
+    rows = {}
+    if RECORD.exists():
+        for line in RECORD.read_text().splitlines()[1:]:
+            league, season, sha256, size = line.split(",")
+            rows[(league, season)] = (sha256, int(size))
+    rows |= new
+    lines = ["league,season,sha256,bytes"]
+    lines += [f"{lg},{ss},{h},{n}" for (lg, ss), (h, n) in sorted(rows.items())]
+    RECORD.write_text("\n".join(lines) + "\n")
 
 
 if __name__ == "__main__":

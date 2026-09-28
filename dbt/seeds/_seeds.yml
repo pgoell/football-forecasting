@@ -20,3 +20,15 @@ seeds:
               arguments:
                 to: ref('bookmakers')
                 field: code
+
+  - name: football_data_files
+    description: >
+      The data version: sha256 and size of each stored Football-Data CSV, written
+      by scripts/download_football_data.py. Committed, so a diff after a download
+      shows which files changed.
+    config:
+      column_types:
+        league: varchar
+        season: varchar
+        sha256: varchar
+        bytes: bigint
