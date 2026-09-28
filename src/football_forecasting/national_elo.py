@@ -295,6 +295,18 @@ def _built(as_of: date, warehouse: Path = WAREHOUSE) -> NationalElo:
     return model
 
 
+@lru_cache(maxsize=32)
+def eloratings_benchmark_at(as_of: date, warehouse: Path = WAREHOUSE) -> EloRatingsBenchmark:
+    """eloratings-v1, walk-forward built and its ordered logit fit on every match strictly
+    before `as_of`, the same discipline as `_built` (national-elo-v1): used by
+    `tournament_run.py` to bind eloratings-v1 to the simulator."""
+    matches = load(warehouse, before=as_of)
+    model = EloRatingsBenchmark(tournament_windows(matches))
+    for m in matches:
+        model.observe(m)
+    return model
+
+
 def match_probs(
     team_a: str,
     team_b: str,

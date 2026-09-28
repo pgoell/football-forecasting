@@ -51,6 +51,10 @@ run = [
 description = "Development-only national-elo-v1 backtest (docs/tournament-spec.md); validation and the holdout are never touched"
 run = "uv run python -m football_forecasting.national_elo_backtest"
 
+[tasks."tournament:forecast"]
+description = "Forecast EURO 2020, WC 2022 and EURO 2024 with national-elo-v1, eloratings-v1 and naive-tournament-v1, store results (docs/tournament-spec.md)"
+run = "uv run python -m football_forecasting.tournament_run"
+
 [tasks.dashboard]
 description = "Serve the backtest dashboard on localhost:8501"
 run = "uv run streamlit run src/football_forecasting/dashboard.py --server.address 127.0.0.1 --server.headless true"
