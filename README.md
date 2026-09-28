@@ -26,6 +26,14 @@ mise run dbt:build      # dbt models and tests into data/warehouse.duckdb
 
 Where each fact about the data comes from, and how to check it: [docs/data-sources.md](docs/data-sources.md).
 
+## Backtest
+
+```sh
+mise run backtest  # predict, store in data/predictions.duckdb, print scores
+```
+
+The engine (`src/football_forecasting/backtest.py`) walks matches in time order and hands a model only results and odds known before the prediction time; its docstring gives the timing rules. Stored predictions never change: a model that gives new numbers needs a new version. Runs and results: [docs/experiment-log.md](docs/experiment-log.md).
+
 ## Phases
 
 0. Define the experiment
