@@ -1,4 +1,22 @@
 models:
+  - name: int_matches
+    description: One row per match with the times its data becomes known; see the model for the rules.
+    columns:
+      - name: match_id
+        data_tests: [unique, not_null]
+      - name: pre_at
+        description: when the pre odds become known; the `pre` prediction time
+        data_tests: [not_null]
+      - name: close_at
+        description: kickoff, or end of match day before 2019/20; the `close` prediction time
+        data_tests: [not_null]
+      - name: result_at
+        description: end of match day; when the result counts as known
+        data_tests: [not_null]
+      - name: pre_timing_uncertain
+        description: match from 20 Dec to 5 Jan, where pre_at may be too early
+        data_tests: [not_null]
+
   - name: int_odds
     description: Odds with available_at and margin-free probabilities (normalized 1/odds).
     columns:
