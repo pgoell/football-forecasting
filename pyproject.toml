@@ -30,9 +30,14 @@ testpaths = ["tests"]
 [tool.ruff]
 target-version = "py313"
 line-length = 100
+# One-off research scripts, kept as they ran.
+extend-exclude = ["research"]
 
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "UP", "SIM", "RUF"]
 
 [tool.ty.environment]
 python-version = "3.13"
+
+[tool.ty.src]
+exclude = ["research"]

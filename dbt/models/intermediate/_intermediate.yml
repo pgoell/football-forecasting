@@ -5,6 +5,9 @@ models:
       - name: available_at
         description: when the odds became known; see the model for the rule
         data_tests: [not_null]
+      - name: pre_timing_uncertain
+        description: pre odds in the 20 Dec to 5 Jan window, where available_at may be too early
+        data_tests: [not_null]
       - name: is_reliable
         description: false where the source flags the bookmaker's odds as unreliable
         data_tests: [not_null]
