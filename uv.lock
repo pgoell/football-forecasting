@@ -413,6 +413,7 @@ dependencies = [
     { name = "dbt-duckdb" },
     { name = "duckdb" },
     { name = "numpy" },
+    { name = "pyyaml" },
     { name = "scipy" },
     { name = "streamlit" },
 ]
@@ -430,6 +431,7 @@ requires-dist = [
     { name = "dbt-duckdb", specifier = ">=1.11.0" },
     { name = "duckdb", specifier = ">=1.5.5" },
     { name = "numpy", specifier = ">=2.5.3" },
+    { name = "pyyaml", specifier = ">=6.0.3" },
     { name = "scipy", specifier = ">=1.18.1" },
     { name = "streamlit", specifier = ">=1.64.0" },
 ]

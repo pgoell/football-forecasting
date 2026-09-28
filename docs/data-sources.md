@@ -322,6 +322,134 @@ No key for friendlies; no EURO winner outright listed. The EURO key starts on 20
 
 Cost for the spec: 270 tournament matches with odds (EURO 2020 51, WC 2022 64, EURO 2024 51, WC 2026 104), two snapshots each (`pre`, `close`), regions `eu` and `uk`, market `h2h`: 270 × 2 × 2 × 10 = 10,800 credits, plus about 300 for event lists and 40 for winner odds. One month of the 20K plan ($30) covers all of it.
 
+## Tournament formats (for the simulator, docs/tournament-spec.md)
+
+Checked on 2026-09-28. Format data (groups, bracket templates, tie-break order, best-third
+tables) lives in `src/football_forecasting/tournament_formats.yaml`, read by
+`football_forecasting.tournament`. Two research agents gathered this; one covered the
+World Cup, one EURO, each against the official regulations first and Wikipedia's tournament
+pages second. WC 2026 and EURO 2028 are format only: no group draw is stored for either
+(the 2026 draw is holdout; 2028 has not been drawn), so neither is fed through the
+bracket-replay tests.
+
+### Group compositions and hosts (checked)
+
+The final group membership and host nation(s) of WC 2006, 2010, 2014, 2018, 2022 and EURO
+2008, 2012, 2016, 2020, 2024, from Wikipedia's tournament and group-stage articles (e.g.
+<https://en.wikipedia.org/wiki/2018_FIFA_World_Cup>, <https://en.wikipedia.org/wiki/UEFA_Euro_2016>,
+and each edition's Group A to H/F pages), cross-checked against martj42/international_results
+by the bracket-replay tests below: every computed knockout pairing must match a real match
+between those two teams, so a wrong team-to-group assignment fails loudly. EURO 2020 had 11
+host cities in 11 countries; of those, England, Italy, Germany, Russia, Hungary, Spain,
+Netherlands, Scotland and Denmark also had a team in the tournament (`hosts` uses these 9).
+WC 2026 hosts (United States, Canada, Mexico) and EURO 2028 hosts (England, Scotland, Wales,
+Republic of Ireland; Northern Ireland's Belfast venue was dropped in September 2024) are
+common knowledge, confirmed at <https://en.wikipedia.org/wiki/UEFA_Euro_2028> and UEFA's own
+announcement <https://www.uefa.com/euro2028/news/0286-1923eef9a9a6-68c007509a1b-1000/>.
+
+### Group-stage tie-break order (checked)
+
+FIFA (2006 to 2022): points, goal difference, goals scored, all over every group match;
+then, among teams still level, points, goal difference and goals scored again but only
+counting matches between them; then fair play (disciplinary points, added for 2018 and
+2022 only) and drawing of lots. Source: 2010 regulations Art. 39.5, 2014 Art. 42.5, 2022
+Art. 12 (archived
+<https://web.archive.org/web/20260928185851/https://digitalhub.fifa.com/m/2744a0a5e3ded185/original/FIFA-World-Cup-Qatar-2022-Regulations_EN.pdf>).
+
+FIFA 2026 changes the order to UEFA's shape (Art. 13): head-to-head first (points, then
+goal difference, then goals scored, among the tied teams), reapplied to any teams still
+tied, then overall goal difference, overall goals scored, disciplinary points, then the
+FIFA World Ranking; drawing of lots is dropped. Archived:
+<https://web.archive.org/web/20260919152026/https://digitalhub.fifa.com/m/636f5c9c6f29771f/original/FWC2026_regulations_EN.pdf>.
+
+UEFA (2008 to 2028): head-to-head points, then head-to-head goal difference, then
+head-to-head goals scored, reapplied to any teams still tied; then overall goal difference,
+overall goals scored, then (varies a little by edition) wins, disciplinary points, UEFA's
+Qualifiers ranking, and lots (Germany only, 2024). Source: EURO 2024 regulations Art. 20,
+archived
+<https://web.archive.org/web/20220516115052/https://documents.uefa.com/api/khub/maps/5tYSJw48iUOPsbIGOxQA4w/attachments/_dSxuIv48n81YqITx97r~g/content>.
+
+`standings()` implements: points over every match; then, for FIFA rules, goal difference
+and goals scored over every match; then one combined head-to-head step (points, goal
+difference, goals scored, in that order, from the same head-to-head matches, reapplied
+fresh to any teams still tied after it); then, for UEFA rules, overall goal difference and
+goals scored; then one random draw standing in for every criterion after that (fair play,
+wins, disciplinary points, coefficient or ranking, drawing of lots): none of these are in
+martj42/international_results (no cards, no rankings), so they cannot be told apart, and
+the spec calls for a random stand-in with a note (docs/tournament-spec.md, Simulator). The
+head-to-head step matters: at EURO 2024, Group E finished four teams level on points, and
+Romania's higher goals scored across the whole group (not just against Belgium) put it
+above Belgium for 2nd place; a version that re-narrowed to just the Belgium-Romania match
+before comparing goals scored would rank them the other way around, and the replay test for
+that tournament catches exactly this.
+
+Two real groups needed a tie-break not in the data at all (fair play, i.e. disciplinary
+points), recorded as `GROUP_OVERRIDES` in `tests/test_tournament_replay.py`:
+
+- WC 2018 Group H: Japan above Senegal, level on points, goal difference, goals scored and
+  head-to-head (2-2); Japan had fewer yellow cards. First time a World Cup group was decided
+  on fair play. <https://web.archive.org/web/20260805051942/https://en.wikipedia.org/wiki/2018_FIFA_World_Cup_Group_H>
+- EURO 2024 Group C: Denmark above Slovenia, level on points, head-to-head (1-1) and overall
+  goal difference and goals scored; Denmark had fewer disciplinary points.
+  <https://www.uefa.com/euro2024/news/028e-1b2b61087cf5-b6b99ef482fc-1000/>
+
+No other group, and no cross-group ranking of third-placed teams, needed fair play,
+coefficient ranking or lots in the ten tournaments checked (both research agents scanned
+every group of all ten).
+
+### Knockout bracket templates (checked)
+
+WC 32-team format (2006 to 2022), Round of 16: 1A-2B, 1C-2D, 1E-2F, 1G-2H, 1B-2A, 1D-2C,
+1F-2E, 1H-2G, unchanged across all five editions; quarterfinals and semifinals fold the
+winners in that order (winners of matches 1 and 2 meet, then 3 and 4, and so on). Source:
+2010 regulations Art. 40 to 42, 2014 Art. 43 to 45, 2022 Art. 12.7 to 12.9, checked against every
+real Round of 16 pairing 2006 to 2022.
+
+WC 48-team format (2026 on): 12 groups, top 2 plus the 8 best third-placed teams reach a
+Round of 32 (FIFA regulations Art. 12.6 to 12.11). Which third-placed team plays which group
+winner depends on which 8 of the 12 groups' thirds qualify: FIFA's Annexe C lists all
+C(12, 8) = 495 possible sets, each with its own assignment; the full table is in
+`tournament_formats.yaml` under the `wc48` shape. Source (archived):
+<https://web.archive.org/web/20260919152026/https://digitalhub.fifa.com/m/636f5c9c6f29771f/original/FWC2026_regulations_EN.pdf>.
+
+EURO 16-team format (2008, 2012): quarterfinals 1A-2B, 1B-2A, 1C-2D, 1D-2C in both
+editions, but the semifinal pairing changed: 2008 (only two knockout-stage venues) kept
+QF1/QF2's winners apart from QF3/QF4's until the final; 2012 used the usual QF1/QF3 and
+QF2/QF4 split. Source: 2008 regulations Art. 7.10 (archived
+<https://web.archive.org/web/20081218110457/http://www.uefa.com/newsfiles/19079.pdf>), 2012
+Art. 8.10 (archived
+<https://web.archive.org/web/20111026215154/https://www.uefa.com/MultimediaFiles/Download/Regulations/competitions/Regulations/91/48/36/914836_DOWNLOAD.pdf>).
+
+EURO 24-team format (2016, 2020, 2024, 2028): top 2 plus the 4 best third-placed teams
+reach a Round of 16. 2016 used its own Round of 16 schedule and its own "ranking of
+third-placed teams" table (winners of A, B, C, D each meet a third); 2020, 2024 and the
+2028 draft regulations share one schedule and one table (winners of B, C, E, F each meet a
+third). Both tables (15 rows each, one per set of 4 qualifying groups out of A-F) are in
+`tournament_formats.yaml`. Source: 2016 regulations Art. 17.02/18.03 (archived
+<https://web.archive.org/web/20131219025616/http://www.uefa.com/MultimediaFiles/Download/Regulations/uefaorg/Regulations/02/03/92/81/2039281_DOWNLOAD.pdf>),
+2020 Art. 21.04 (archived
+<https://web.archive.org/web/20210511180320/https://documents.uefa.com/internal/api/webapp/documents/WVKcnryVkASzztwJjPBcIw/content>),
+2024 (same document as the tie-break quote above); 2028's draft table matches 2024's
+row for row.
+
+### Knockout draw and hosts (spec rule)
+
+Every computed pairing above is checked against martj42/international_results by
+`tests/test_tournament_replay.py`: the real winner (shootouts.csv for a penalty
+shootout) of each pairing feeds the next round, and the champion must match the real
+one. All ten tournaments (WC 2006-2022, EURO 2008-2024) reproduce their real group
+tables, brackets and champion. A pair that met twice (once in the group stage, once
+again in the knockout stage, e.g. Spain v Italy at EURO 2012) is resolved by the later
+of the two real matches.
+
+Extra time and penalties are not modelled apart: a 90-minute draw in a knockout match
+goes through with `P(H) / (P(H) + P(A))` of the model's own win chances
+(docs/tournament-spec.md, Simulator); this has no effect on the replay tests, which use
+real results throughout. "Home" in a group or knockout match is a host nation if exactly
+one of the two teams is one, else neutral: a simplification for multi-host tournaments
+(EURO 2020's 11 host cities, EURO 2028's 4 host associations), where the real home
+advantage varies match by match; documented here rather than modelled venue by venue.
+
 ## Open checks
 
 - The dbt test `odds_overround_plausible` warns on 65 single-bookmaker rows outside a margin of -1% to 30% (counted 2026-09-28). Likely source errors, not traced, and left in: marking them unreliable would change the stored scores.
