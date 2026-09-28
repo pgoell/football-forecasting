@@ -223,13 +223,58 @@ Fitted weight `b` on shots-dc: +0.02 to +0.15 at `pre` from 2012/13, −0.02 to 
 
 Reading: Football-Data shot counts carry no information that goals and the market do not already carry. xG is the next candidate source.
 
-## 2026-09-28: Phase 4, xG: stopped before download
+## 2026-09-28: Phase 4, xG
 
-No model, no data seen. The plan was Understat xG from 2014/15, fitted like `shots-dc-v1` and compared on 2014/15 onward. Understat's robots.txt reads `User-agent: *` / `Disallow: /`, and the site has no terms page that says anything else, so a download script would go against the only rule the site states. FBref, the usual alternative, forbids using its data "for [...] supporting machine learning methods used to predict [...] or score inputs into the models", which covers this project however the data is fetched. Quotes and archive copies: `docs/data-sources.md`. No xG model was built.
+Data seen: warm-up, development and validation seasons (2000/01 to 2022/23); xG from 2014/15. The holdout is never loaded. The one setting, the xG weight, was chosen on development seasons 2014/15 to 2018/19 only, before any validation score was seen.
 
-Options, none taken yet:
+Source: Understat, downloaded against its robots.txt by the owner's decision (`docs/data-sources.md`). Every Football-Data match from 2014/15 matches exactly one Understat match (dbt tests).
 
-- Ask Understat (`support@understat.com`) for permission to download the EPL and Bundesliga match files once, for private research.
-- A licensed xG source: paid data providers (Opta/Stats Perform, Wyscout, API-Football and others; coverage, price and terms not checked).
-- StatsBomb open data (free with credit; covers only a few seasons and tournaments, so not a 2014/15 onward series for E0 and D1; not checked in detail).
-- Stop here. If the untested reason given for `shots-dc-v1` holds (every shot on target counted the same), a measure of chance quality is what could help, and that is what xG is; so a licensed source is the option most likely to change the answer.
+### xg-dc-v1
+
+`xg-dc-v1`: `dixon-coles-v1` with the rates fitted to `(1 − w) × goals + w × xG`. Matches in the window without xG (before 2014/15) count their goals. Forecasts from 2014/15 only.
+
+Choosing w on development only (`OMP_NUM_THREADS=1 uv run research/xg-weight/choose.py`; validation not passed in, nothing stored), 2014/15 to 2018/19, 3,430 matches:
+
+| w | log loss pre | log loss close |
+|---|---|---|
+| 0 (= dixon-coles-v1) | 0.9845 | 0.9844 |
+| 0.25 | 0.9841 | 0.9840 |
+| 0.5 | 0.9844 | 0.9843 |
+| 0.75 | 0.9853 | 0.9852 |
+| 1 (xG only) | 0.9869 | 0.9867 |
+
+Stored: w = 0.25. Unlike shots on target, a little xG helps, but xG alone is worse than goals alone.
+
+Paired differences in log loss, 95% bootstrap interval over matchdays, on the matches naive, Elo, Dixon-Coles, xg-dc and the market all predicted, so 2014/15 onward (`uv run research/phase4-check/check.py xg-dc-v1`):
+
+| Period | Horizon | n | xg-dc | − Naive | − Elo | − Dixon-Coles | − Market |
+|---|---|---|---|---|---|---|---|
+| development | pre | 3,430 | 0.9841 | −0.0787 (−0.0894, −0.0684) | +0.0022 (−0.0021, +0.0063) | −0.0004 (−0.0011, +0.0004) | +0.0177 (+0.0120, +0.0231) |
+| development | close | 3,429 | 0.9843 | −0.0786 (−0.0910, −0.0672) | +0.0021 (−0.0020, +0.0066) | −0.0004 (−0.0013, +0.0004) | +0.0180 (+0.0119, +0.0242) |
+| validation | pre | 2,744 | 0.9892 | −0.0822 (−0.0948, −0.0687) | −0.0041 (−0.0090, +0.0010) | −0.0019 (−0.0031, −0.0007) | +0.0122 (+0.0070, +0.0176) |
+| validation | close | 2,744 | 0.9893 | −0.0822 (−0.0955, −0.0692) | −0.0040 (−0.0093, +0.0014) | −0.0019 (−0.0029, −0.0007) | +0.0147 (+0.0082, +0.0218) |
+
+Without `pre_timing_uncertain` matches (pre only): development n 3,219, − Dixon-Coles −0.0004 (−0.0013, +0.0004), − Market +0.0170; validation n 2,600, − Dixon-Coles −0.0017 (−0.0029, −0.0006), − Market +0.0118. No conclusion changes.
+
+### market-xg-v1: does xg-dc add to the market?
+
+`market-xg-v1`: the question 2b blend with `xg-dc-v1`. Its first fit needs a season of xg-dc forecasts, so it starts in 2015/16. Log loss minus market, paired; `market-dc-v1` on the same matches for comparison:
+
+| Period | Horizon | n | market-xg − Market | market-dc − Market |
+|---|---|---|---|---|
+| development | pre | 2,744 | +0.0008 (−0.0008, +0.0026) | +0.0001 (−0.0013, +0.0014) |
+| development | close | 2,743 | +0.0014 (−0.0008, +0.0036) | +0.0008 (+0.0001, +0.0015) |
+| validation | pre | 2,744 | +0.0008 (−0.0003, +0.0019) | +0.0009 (−0.0001, +0.0019) |
+| validation | close | 2,744 | +0.0005 (−0.0005, +0.0016) | +0.0003 (−0.0002, +0.0008) |
+
+Without `pre_timing_uncertain` (pre): development +0.0007 (−0.0009, +0.0024), validation +0.0010 (−0.0001, +0.0020).
+
+Fitted weight `b` on xg-dc: +0.11 and +0.03 in the first two `pre` fits, then negative, −0.21 to −0.04, from 2017/18; at `close` from −0.14 to +0.01 from 2017/18. The fit leans slightly away from xg-dc where it disagrees with the market. Slope of (observed − market) on (model − market), home win: −0.022 ± 0.226 (development pre), +0.046 ± 0.253 (validation pre), +0.078 ± 0.205 and +0.005 ± 0.235 at `close`.
+
+## Phase 4 answers
+
+- **Which feature helps?** xG, a little. `xg-dc-v1` beats Dixon-Coles by 0.0019 on validation at both horizons, the interval clear of 0; on development by 0.0004, the interval holding 0. Shots on target and rest days do not help (previous entry).
+- **By how much, against the benchmarks (2014/15 onward)?** xg-dc beats naive by 0.08. Against Elo it is 0.002 worse on development and 0.004 better on validation, both intervals holding 0: still a tie. It trails the market by 0.018 on development and 0.012 to 0.015 on validation, every interval clear of 0. It is the best of our models on validation, and the gap to the market is its narrowest yet, but the gap is still about six times what xG gained.
+- **Does any new model add information to the market?** No, at either horizon. `market-shots-v1` and `market-xg-v1` score the same as the market or slightly worse, every validation interval holding 0, and the disagreement slopes are 0. The market already prices what shots and xG say.
+
+Reading: features built from what happened in past matches (goals, shots, xG, schedule) have reached the market's level of information and no further. What the market has and we lack is likely news before the match: line-ups, injuries, suspensions and transfers. Question 2b still fails; question 3 (CLV) remains open.
