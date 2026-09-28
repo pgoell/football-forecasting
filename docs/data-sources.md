@@ -125,9 +125,29 @@ From one research agent on 2026-09-28, checked on the providers' own pages by th
 | Pinnacle API | closed to the public since 23/07/2025 | n/a | none |
 | OddsPortal | odds history | free | none: terms forbid scraping |
 | football-data.org | fixtures and results; odds add-on | free; €15/mo odds | live fixtures |
-| Understat | xG and shots from 2014/15 | free | Phase 4 |
+| Understat | xG and shots from 2014/15 | free | none: robots.txt disallows all scripts (see below) |
 | StatsBomb open data | event data for a few seasons and tournaments | free, credit required | Phase 4 |
 | eloratings.net, martj42/international_results | national teams | free (results CC0) | EURO 2028 |
+
+## Understat (not used: robots.txt forbids scripted access)
+
+Checked 2026-09-28 for Phase 4 xG, 2014/15 onward.
+
+> "User-agent: * / Disallow: /"
+
+Source: <https://understat.com/robots.txt> (two lines, joined here; `Last-Modified` 13 Jul 2020), archived <https://web.archive.org/web/20260928162956/https://understat.com/robots.txt>.
+
+The site has no terms, privacy or FAQ page: `/terms`, `/tos`, `/terms-of-use`, `/terms-and-conditions`, `/legal`, `/privacy`, `/privacy-policy`, `/faq`, `/about`, `/contact` and `/disclaimer` all return 404, and the home page links only to the league pages and `support@understat.com` (home page archived <https://web.archive.org/web/20260928163005/https://understat.com/>). So the only stated rule is robots.txt, and it asks every script to stay off the whole site. A download script would break it, however slowly it ran, so the project does not scrape Understat.
+
+How the data is served, for the record: `https://understat.com/getLeagueData/<EPL|Bundesliga>/<start year>` returns JSON with every match of a season (`xG.h`, `xG.a`, `datetime`, team titles) when sent with `X-Requested-With: XMLHttpRequest`; 2014 to 2026 exist (**unverified**, one research agent).
+
+### FBref (not a fallback)
+
+> "[you may not] without our express written permission, use any automated means to access or use the Site, including scripts, bots, scrapers, data miners, or similar software, in a manner that adversely impacts site performance or access"
+
+> "[you may not] copy or use any material or Content from the Site, including without limitation any statistics, data, text, graphics, or images, for purposes of training, fine-tuning, prompting, or instructing artificial intelligence models or technologies in any manner, including without limitation for purposes of [...] (ii) supporting machine learning methods used to predict, classify, label, or score inputs into the models"
+
+Source: <https://www.sports-reference.com/termsofuse.html> (FBref's owner, "Last Updated: May 19, 2023"), archived <https://web.archive.org/web/20260812025756/https://www.sports-reference.com/termsofuse.html>. The second clause covers a forecasting model fitted on their data, however it is fetched. Rate limit, for the record: "we will block users sending requests to: FBref and Stathead sites more often than ten requests in a minute" (<https://www.sports-reference.com/bot-traffic.html>, archived <https://web.archive.org/web/20260928163442/https://www.sports-reference.com/bot-traffic.html>).
 
 ## Open checks
 

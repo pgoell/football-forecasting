@@ -222,3 +222,14 @@ Fitted weight `b` on shots-dc: +0.02 to +0.15 at `pre` from 2012/13, −0.02 to 
 - **Does it add information to the market?** No, at either horizon. `market-shots-v1` scores the same as `market-dc-v1`, slightly worse than the market, every validation interval holding 0; the disagreement slope is 0.
 
 Reading: Football-Data shot counts carry no information that goals and the market do not already carry. xG is the next candidate source.
+
+## 2026-09-28: Phase 4, xG: stopped before download
+
+No model, no data seen. The plan was Understat xG from 2014/15, fitted like `shots-dc-v1` and compared on 2014/15 onward. Understat's robots.txt reads `User-agent: *` / `Disallow: /`, and the site has no terms page that says anything else, so a download script would go against the only rule the site states. FBref, the usual alternative, forbids using its data "for [...] supporting machine learning methods used to predict [...] or score inputs into the models", which covers this project however the data is fetched. Quotes and archive copies: `docs/data-sources.md`. No xG model was built.
+
+Options, none taken yet:
+
+- Ask Understat (`support@understat.com`) for permission to download the EPL and Bundesliga match files once, for private research.
+- A licensed xG source: paid data providers (Opta/Stats Perform, Wyscout, API-Football and others; coverage, price and terms not checked).
+- StatsBomb open data (free with credit; covers only a few seasons and tournaments, so not a 2014/15 onward series for E0 and D1; not checked in detail).
+- Stop here. If the untested reason given for `shots-dc-v1` holds (every shot on target counted the same), a measure of chance quality is what could help, and that is what xG is; so a licensed source is the option most likely to change the answer.
