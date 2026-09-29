@@ -1,6 +1,6 @@
 # Post-mortem
 
-Written 2026-09-29. Covers everything up to open PR #11 (`feat/euro-2028`). Sources: `docs/experiment-spec.md` (the spec), `docs/tournament-spec.md` (the tournament spec), `docs/experiment-log.md` (the log), `docs/data-sources.md` and the README. Parentheses name the section. The round-calibration diagnosis in the log and the EURO 2028 section of `docs/data-sources.md` are on PR #11, not yet on master.
+Written 2026-09-29, when the project closed. Sources: `docs/experiment-spec.md` (the spec), `docs/tournament-spec.md` (the tournament spec), `docs/experiment-log.md` (the log), `docs/data-sources.md` and the README. Parentheses name the section.
 
 ## What we set out to do
 
