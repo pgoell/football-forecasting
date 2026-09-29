@@ -1,5 +1,7 @@
 # football-forecasting
 
+**Archived 2026-09-29.** The project is closed. What it tested, what came out and why it stopped: [docs/post-mortem.md](docs/post-mortem.md).
+
 Predict football matches with statistical models (Elo, Poisson, Dixon-Coles, later gradient boosting), then test whether the forecasts beat the betting market after costs.
 
 First milestone: Premier League and Bundesliga, 1X2 (home win, draw, away win) only, strict walk-forward backtest against Elo and the devigged market. Second experiment: the same question in thinner markets, 2. Bundesliga, Championship and League One (pre-registered in the spec's change log).
@@ -40,10 +42,9 @@ Each backtest run gets a row per model in the `runs` table (git commit, uncommit
 
 ```sh
 mise run dashboard         # local, http://127.0.0.1:8501
-mise run dashboard:deploy  # container on the VPS, https://football.pascalkraus.com
 ```
 
-Scores, log loss by season, the gap to a reference model, calibration and runs, read from the stores read-only. A Glossary page explains the terms and each model (`src/football_forecasting/glossary.md`). Holdout seasons never reach it. The public route sits behind the GitHub login in `server-infra` (Caddy route and Cloudflare DNS record there).
+Scores, log loss by season, the gap to a reference model, calibration and runs, read from the stores read-only. A Glossary page explains the terms and each model (`src/football_forecasting/glossary.md`). Holdout seasons never reach it. The VPS container, its Caddy route and its DNS record were removed when the project closed; the dashboard runs locally only.
 
 ## Phases
 
