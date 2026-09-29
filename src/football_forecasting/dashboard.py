@@ -11,6 +11,7 @@ import duckdb
 import pandas as pd
 import streamlit as st
 
+from football_forecasting import euro2028 as e28
 from football_forecasting.data import (
     FIRST_DEVELOPMENT_SEASON,
     FIRST_HOLDOUT_SEASON,
@@ -323,10 +324,71 @@ def backtest() -> None:
     )
 
 
+def euro2028() -> None:
+    st.title("EURO 2028")
+    st.markdown(
+        "9 June to 9 July 2028, hosted by England, Scotland, Wales and the Republic of "
+        "Ireland (docs/tournament-spec.md). The tournament spec's question 3: publish a "
+        "probability for every team, logged before kickoff, scored once the results come in."
+    )
+    rows, as_of = e28.latest_snapshot()
+    if not rows:
+        st.info("No EURO 2028 ratings logged yet. Run `mise run euro2028:refresh`.")
+        return
+
+    st.markdown(
+        "**The qualifying draw has not happened.** UEFA holds it on 6 December 2026 in "
+        "Belfast: 12 groups of four or five teams, all 55 UEFA members entering, played "
+        "March to November 2027 (docs/data-sources.md, EURO 2028 qualifying). Until there "
+        "is a real draw, `P(qualify)`, `P(reach round)` and `P(win)` cannot be simulated, "
+        "so the honest thing to show is each team's current eloratings.net rating, nothing "
+        "more."
+    )
+    st.markdown(
+        "**Hosting is not a free finals place here.** Unlike EURO 2024 and earlier, all 4 "
+        "hosts play in qualifying, drawn into separate groups so they never meet each "
+        "other; a safety net reserves at most 2 finals places for the best-ranked host "
+        "that still misses out after the group winners and best runners-up are decided."
+    )
+    st.caption(
+        f"Once there is a draw, this page moves to the same forecast as the Backtest tab's "
+        f"WC 2026 holdout: eloratings.net ratings (`{e28.MODEL_VERSION}`) through the "
+        f"tournament simulator (`{e28.SIM_VERSION}`, unchanged: docs/experiment-log.md's "
+        f"round-calibration diagnosis found no fix that clearly helped)."
+    )
+    st.caption(
+        f"Logged {as_of:%Y-%m-%d %H:%M} UTC, immutable: a later refresh adds a new row, "
+        "never changes this one (docs/tournament-spec.md, Rules against fooling ourselves). "
+        "Refresh with `mise run euro2028:refresh`."
+    )
+    st.caption(
+        "Russia, a UEFA member, is left out: suspended from UEFA and FIFA competitions since "
+        "February 2022."
+    )
+
+    df = pd.DataFrame({"Team": [r.name for r in rows], "Host": [r.is_host for r in rows]})
+    df["Rating"] = [r.rating for r in rows]
+    st.dataframe(
+        df,
+        hide_index=True,
+        column_config={
+            "Host": st.column_config.CheckboxColumn(
+                "Host",
+                help="One of the 4 EURO 2028 hosts. Still has to qualify: shown first only "
+                "for convenience, not because it is guaranteed a finals place.",
+            ),
+            "Rating": st.column_config.NumberColumn(
+                "eloratings.net rating", help="Higher is stronger.", format="%.0f"
+            ),
+        },
+    )
+
+
 st.set_page_config(page_title="Football backtest", layout="wide")
 st.navigation(
     [
         st.Page(backtest, title="Backtest", icon=":material/monitoring:", default=True),
+        st.Page(euro2028, title="EURO 2028", icon=":material/trophy:"),
         st.Page(glossary, title="Glossary", icon=":material/menu_book:"),
     ]
 ).run()
