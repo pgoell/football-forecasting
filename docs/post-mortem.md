@@ -54,12 +54,14 @@ In our view, not tested:
 - Judge R2 on more than one bracket, or report it without a pass or fail, as the spec already does for the winner.
 - Do not download against a source's stated terms.
 
-## What stays live
+## How it closed
 
-- The EURO 2028 dashboard page on eloratings.net ratings, at `football.pascalkraus.com` behind the GitHub login (README, Dashboard; PR #11). Until the draw it shows each UEFA team's current rating, keeps suspended Russia apart, and flags the four hosts, who no longer get an automatic finals place (`docs/data-sources.md`, EURO 2028 qualifying).
-- `mise run euro2028:refresh` downloads martj42 and eloratings.net again, rebuilds dbt and logs a new, immutable ratings snapshot. eloratings.net rewrites past years, so check the `dbt/seeds/eloratings_files.csv` diff before trusting a changed forecast (`mise.toml`).
-- The qualifying draw is on 6 December 2026 in Belfast (`docs/data-sources.md`, EURO 2028 qualifying). Once there are groups, the finals simulator needs new code to forecast qualifying (home and away groups, `P(qualify)`), then the finals. If round probabilities are too cautious again, rating uncertainty is the next thing to try (log, round-calibration diagnosis).
+The project was archived on 2026-09-29. The dashboard container, its Caddy route and the `football.pascalkraus.com` DNS record were removed; the dashboard, the EURO 2028 page included, now runs only locally (`mise run dashboard`). The GitHub repo is archived and read-only.
+
+- `mise run euro2028:refresh` still works locally: it downloads martj42 and eloratings.net again, rebuilds dbt and logs a new ratings snapshot. eloratings.net rewrites past years, so check the `dbt/seeds/eloratings_files.csv` diff before trusting a changed forecast (`mise.toml`).
+- For a restart: the EURO 2028 qualifying draw is on 6 December 2026 in Belfast (`docs/data-sources.md`, EURO 2028 qualifying). Forecasting qualifying needs new code (home and away groups, `P(qualify)`); if round probabilities are too cautious again, rating uncertainty is the next thing to try (log, round-calibration diagnosis).
+- On 2026-09-29 the league tables were missing from `data/predictions.duckdb`: an agent had put a copy holding only the international tables in its place. We rebuilt the file from the backup `predictions.pre-thin.duckdb` and a rerun of the backtest. No stored E0 or D1 prediction changed, and every D2, E1 and E2 validation score matches the log to four places; only the stored-at times and run ids of the lower-league rows date from the rebuild. `data/` is not in git, so a store like this needs its own backup.
 
 ## What comes next
 
-A Kicktipp tipping test on the World Cup and EURO. We have not yet checked Kicktipp's scoring rules. The test needs its own spec, frozen before any data, like the two before it.
+A Kicktipp tipping test on the World Cup and EURO, as a new project: the market is an input there, not the opponent, and the tip that earns the most points on average under a pool's rules can be worked out from score probabilities. Kicktipp's rule options were surveyed on 2026-09-29 (fixed points, goal distance, a rule that pays more for rare tips, knockout tips at 90 minutes, after extra time or after penalties, bonus questions, jokers). The test needs the pool's own settings and its own spec, frozen before any data, like the two before it.
